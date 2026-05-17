@@ -9,9 +9,13 @@ Ham2K PoLo callsign notes file (auto-generated, not manually edited).
 
 import csv
 import io
+import os
 import re
 import sys
+import urllib.error
+import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,6 +28,9 @@ MEMBERS_TXT_PATH = REPO_ROOT / "members.txt"
 
 NEW_BADGE_LIMIT = 3  # last N members get the "NEW!!" badge
 OG_BADGE_NUMBERS = {2}  # member numbers that get the "OG" badge (founder #1 has its own treatment)
+
+QRZ_XML_URL = "https://xmldata.qrz.com/xml/current/"
+QRZ_NS = {"q": "http://xmldata.qrz.com"}
 
 
 def html_escape(text: str) -> str:
@@ -71,6 +78,82 @@ def parse_members(csv_text: str) -> list[dict]:
     return members
 
 
+def _qrz_get(params: dict[str, str]) -> ET.Element | None:
+    url = QRZ_XML_URL + "?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(url, headers={"User-Agent": "BKG-Roster-Builder/1.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return ET.fromstring(resp.read())
+    except (urllib.error.URLError, TimeoutError, ET.ParseError) as exc:
+        print(f"  QRZ request failed: {exc}", file=sys.stderr)
+        return None
+
+
+def qrz_login(username: str, password: str) -> str | None:
+    """Authenticate with QRZ XML API; returns a session key or None."""
+    root = _qrz_get({"username": username, "password": password, "agent": "bkg.club-1.0"})
+    if root is None:
+        return None
+    session = root.find("q:Session", QRZ_NS)
+    if session is None:
+        return None
+    error = session.find("q:Error", QRZ_NS)
+    if error is not None and error.text:
+        print(f"  QRZ login error: {error.text}", file=sys.stderr)
+        return None
+    key = session.find("q:Key", QRZ_NS)
+    return key.text if key is not None and key.text else None
+
+
+def qrz_fetch_state(session_key: str, callsign: str) -> str | None:
+    """Look up a callsign and return its 2-letter US state code, or None."""
+    root = _qrz_get({"s": session_key, "callsign": callsign})
+    if root is None:
+        return None
+    call = root.find("q:Callsign", QRZ_NS)
+    if call is None:
+        return None
+    state = call.find("q:state", QRZ_NS)
+    if state is None or not state.text:
+        return None
+    text = state.text.strip().upper()
+    return text if re.fullmatch(r"[A-Z]{2}", text) else None
+
+
+def annotate_state_ogs(members: list[dict]) -> None:
+    """Set member['state'] and member['state_og'] in place using QRZ XML API.
+
+    Requires env vars QRZ_USERNAME and QRZ_PASSWORD (an XML-subscription QRZ
+    account). If unset or login fails, members get no state info and no state
+    OG badges are rendered.
+    """
+    for member in members:
+        member["state"] = None
+        member["state_og"] = False
+
+    username = os.environ.get("QRZ_USERNAME")
+    password = os.environ.get("QRZ_PASSWORD")
+    if not username or not password:
+        print("  QRZ_USERNAME/QRZ_PASSWORD not set; skipping state OG enrichment", file=sys.stderr)
+        return
+
+    session_key = qrz_login(username, password)
+    if not session_key:
+        print("  QRZ login failed; skipping state OG enrichment", file=sys.stderr)
+        return
+
+    for member in members:
+        member["state"] = qrz_fetch_state(session_key, member["callsign"])
+
+    earliest: dict[str, dict] = {}
+    for member in sorted(members, key=lambda m: m["number"]):
+        state = member.get("state")
+        if state and state not in earliest:
+            earliest[state] = member
+    for member in earliest.values():
+        member["state_og"] = True
+
+
 def first_name_initial(name: str) -> str:
     """Return 'First L' from 'First Last' (handles suffixes like 'Jr')."""
     if not name:
@@ -89,12 +172,20 @@ def first_name_initial(name: str) -> str:
     return f"{first} {last_candidates[-1][0].upper()}"
 
 
+def state_og_badge_html(member: dict) -> str:
+    if not member.get("state_og"):
+        return ""
+    state = html_escape(member.get("state") or "")
+    return f'\n                    <div class="state-og-badge">{state} OG</div>'
+
+
 def render_founder_card(member: dict) -> str:
     callsign = html_escape(member["callsign"])
     name = html_escape(member["name"])
     number = f"BKG #{member['number']:03d}"
+    state_og_html = state_og_badge_html(member)
     return f"""                <!-- FOUNDER - {callsign} - THE OG BRASS POUNDER -->
-                <div class="member-card founder-card">
+                <div class="member-card founder-card">{state_og_html}
                     <div class="founder-badge">👑 GODFATHER 👑</div>
                     <div class="founder-flames"></div>
                     <div class="mugshot founder-mugshot">
@@ -124,6 +215,7 @@ def render_member_card(member: dict, *, is_og: bool, is_new: bool) -> str:
         badge_html = '\n                    <div class="og-badge">OG</div>'
     elif is_new:
         badge_html = '\n                    <div class="new-badge">NEW!!</div>'
+    badge_html += state_og_badge_html(member)
     return f"""                <!-- {callsign} -->
                 <div class="member-card">{badge_html}
                     <div class="mugshot">
@@ -235,6 +327,11 @@ def main() -> int:
         print("ERROR: No members parsed from CSV", file=sys.stderr)
         return 1
     print(f"Parsed {len(members)} members (BKG #{members[0]['number']:03d}–#{members[-1]['number']:03d})")
+
+    print("Looking up state for each member via QRZ XML API")
+    annotate_state_ogs(members)
+    og_count = sum(1 for m in members if m.get("state_og"))
+    print(f"Marked {og_count} state OG(s) across {len({m['state'] for m in members if m.get('state')})} state(s)")
 
     update_index(members)
     print(f"Updated {INDEX_PATH.name}")
