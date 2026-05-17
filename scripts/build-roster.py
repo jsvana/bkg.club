@@ -78,14 +78,25 @@ def parse_members(csv_text: str) -> list[dict]:
     return members
 
 
-def _qrz_get(params: dict[str, str]) -> ET.Element | None:
+def _qrz_get_raw(params: dict[str, str]) -> bytes | None:
     url = QRZ_XML_URL + "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"User-Agent": "BKG-Roster-Builder/1.0"})
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
-            return ET.fromstring(resp.read())
-    except (urllib.error.URLError, TimeoutError, ET.ParseError) as exc:
+            return resp.read()
+    except (urllib.error.URLError, TimeoutError) as exc:
         print(f"  QRZ request failed: {exc}", file=sys.stderr)
+        return None
+
+
+def _qrz_get(params: dict[str, str]) -> ET.Element | None:
+    raw = _qrz_get_raw(params)
+    if raw is None:
+        return None
+    try:
+        return ET.fromstring(raw)
+    except ET.ParseError as exc:
+        print(f"  QRZ XML parse failed: {exc}", file=sys.stderr)
         return None
 
 
@@ -105,11 +116,26 @@ def qrz_login(username: str, password: str) -> str | None:
     return key.text if key is not None and key.text else None
 
 
-def qrz_fetch_state(session_key: str, callsign: str) -> str | None:
+def qrz_fetch_state(session_key: str, callsign: str, *, debug: bool = False) -> str | None:
     """Look up a callsign and return its 2-letter US state code, or None."""
-    root = _qrz_get({"s": session_key, "callsign": callsign})
-    if root is None:
+    raw = _qrz_get_raw({"s": session_key, "callsign": callsign})
+    if raw is None:
         return None
+    if debug:
+        print(f"  QRZ response for {callsign}:", file=sys.stderr)
+        for line in raw.decode("utf-8", errors="replace").splitlines():
+            print(f"    {line}", file=sys.stderr)
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError as exc:
+        print(f"  QRZ parse error for {callsign}: {exc}", file=sys.stderr)
+        return None
+    # Surface session-level errors (e.g. "Session Timeout", "Not subscribed").
+    session = root.find("q:Session", QRZ_NS)
+    if session is not None:
+        err = session.find("q:Error", QRZ_NS)
+        if err is not None and err.text:
+            print(f"  QRZ session error for {callsign}: {err.text}", file=sys.stderr)
     call = root.find("q:Callsign", QRZ_NS)
     if call is None:
         return None
@@ -139,8 +165,10 @@ def annotate_state_ogs(members: list[dict]) -> None:
     if not session_key:
         raise RuntimeError("QRZ login failed")
 
-    for member in members:
-        member["state"] = qrz_fetch_state(session_key, member["callsign"])
+    for idx, member in enumerate(members):
+        member["state"] = qrz_fetch_state(session_key, member["callsign"], debug=(idx == 0))
+    resolved = sum(1 for m in members if m.get("state"))
+    print(f"  QRZ resolved state for {resolved}/{len(members)} members", file=sys.stderr)
 
     earliest: dict[str, dict] = {}
     for member in sorted(members, key=lambda m: m["number"]):
