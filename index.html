@@ -1579,76 +1579,6 @@
             margin-top: 15px;
         }
 
-        /* Mini music player */
-        .mini-player {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: linear-gradient(180deg, #1a1a1a 0%, #000 100%);
-            border: 3px ridge var(--brass);
-            z-index: 9999;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            width: 220px;
-        }
-
-        .mini-player-header {
-            background: var(--blood-red);
-            padding: 5px 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-family: 'Bangers', cursive;
-            font-size: 0.8rem;
-            color: var(--brass-light);
-        }
-
-        .mini-close {
-            background: none;
-            border: none;
-            color: var(--brass-light);
-            font-size: 1rem;
-            cursor: pointer;
-        }
-
-        .mini-close:hover {
-            color: #fff;
-        }
-
-        .mini-player-link {
-            display: block;
-            text-decoration: none;
-            padding: 15px;
-            transition: all 0.3s;
-        }
-
-        .mini-player-link:hover {
-            background: rgba(212, 175, 55, 0.1);
-        }
-
-        .mini-player-content {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .mini-player-content .mini-player-icon {
-            font-size: 2rem;
-            animation: bounce 0.5s infinite alternate;
-        }
-
-        .mini-player-content .mini-player-text {
-            font-family: 'Courier New', monospace;
-            color: var(--brass);
-            font-size: 1rem;
-        }
-
-        .mini-player-cta {
-            font-family: 'Comic Sans MS', cursive;
-            font-size: 0.65rem;
-            color: var(--lime);
-            margin-top: 5px;
-            animation: blink 1s step-end infinite;
-        }
     </style>
 </head>
 <body>
@@ -1672,23 +1602,6 @@
             <div class="splash-age">R U READY 2 POUND BRASS??</div>
             <div class="splash-small">best viewed with Netscape Navigator 4.0</div>
         </div>
-    </div>
-
-    <!-- Mini music player - links to YouTube -->
-    <div id="miniPlayer" class="mini-player" style="display:none;">
-        <div class="mini-player-header">
-            <span>🎵 BKG RADIO</span>
-            <button onclick="closeMiniPlayer()" class="mini-close">✕</button>
-        </div>
-        <a href="https://youtu.be/41qC3w3UUkU" target="_blank" class="mini-player-link">
-            <div class="mini-player-content">
-                <div class="mini-player-icon">📻</div>
-                <div class="mini-player-text">
-                    <div>-... -.- --.</div>
-                    <div class="mini-player-cta">CLICK 2 LISTEN ON YOUTUBE</div>
-                </div>
-            </div>
-        </a>
     </div>
 
     <!-- Backgrounds -->
@@ -1765,8 +1678,8 @@
                     </div>
                 </div>
 
-                <!-- CW Player - Click to toggle BKG Radio -->
-                <div class="music-player" onclick="toggleMiniPlayer()" style="cursor:pointer;" title="Click to toggle BKG Radio!">
+                <!-- CW Player -->
+                <div class="music-player">
                     <div class="music-player-icon">📻</div>
                     <div class="music-player-text">
                         <div class="music-player-title">BKG</div>
@@ -2423,26 +2336,8 @@
 
     <!-- Sparkle effects and CW audio -->
     <script>
-        // Enter site function - shows mini player popup
         function enterSite() {
-            // Hide splash screen
             document.getElementById('splashScreen').classList.add('hidden');
-            
-            // Show mini player
-            document.getElementById('miniPlayer').style.display = 'block';
-        }
-
-        function closeMiniPlayer() {
-            document.getElementById('miniPlayer').style.display = 'none';
-        }
-
-        function toggleMiniPlayer() {
-            const miniPlayer = document.getElementById('miniPlayer');
-            if (miniPlayer.style.display === 'none') {
-                miniPlayer.style.display = 'block';
-            } else {
-                miniPlayer.style.display = 'none';
-            }
         }
 
         // Create sparkles that follow mouse
