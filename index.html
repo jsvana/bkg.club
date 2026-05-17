@@ -856,6 +856,7 @@
                 #fff 10px,
                 #fff 20px
             );
+            z-index: 2;
         }
 
         .mugshot::after {
@@ -866,6 +867,18 @@
             right: 0;
             height: 25px;
             background: #000;
+            z-index: 2;
+        }
+
+        .mugshot-photo {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
+            filter: grayscale(0.35) contrast(1.05);
+            z-index: 1;
         }
 
         .mugshot-placeholder {

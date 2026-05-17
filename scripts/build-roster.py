@@ -25,6 +25,9 @@ SHEET_CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?forma
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = REPO_ROOT / "index.html"
 MEMBERS_TXT_PATH = REPO_ROOT / "members.txt"
+MUGSHOT_DIR = REPO_ROOT / "images" / "mugshots"
+MUGSHOT_REL_DIR = "images/mugshots"
+MUGSHOT_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 NEW_BADGE_LIMIT = 3  # last N members get the "NEW!!" badge
 OG_BADGE_NUMBERS = {2}  # member numbers that get the "OG" badge (founder #1 has its own treatment)
@@ -116,11 +119,12 @@ def qrz_login(username: str, password: str) -> str | None:
     return key.text if key is not None and key.text else None
 
 
-def qrz_fetch_state(session_key: str, callsign: str, *, debug: bool = False) -> str | None:
-    """Look up a callsign and return its 2-letter US state code, or None."""
+def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) -> dict:
+    """Look up a callsign. Returns {'state': str|None, 'image': str|None}."""
+    empty = {"state": None, "image": None}
     raw = _qrz_get_raw({"s": session_key, "callsign": callsign})
     if raw is None:
-        return None
+        return empty
     if debug:
         print(f"  QRZ response for {callsign}:", file=sys.stderr)
         for line in raw.decode("utf-8", errors="replace").splitlines():
@@ -129,7 +133,7 @@ def qrz_fetch_state(session_key: str, callsign: str, *, debug: bool = False) -> 
         root = ET.fromstring(raw)
     except ET.ParseError as exc:
         print(f"  QRZ parse error for {callsign}: {exc}", file=sys.stderr)
-        return None
+        return empty
     # Surface session-level errors (e.g. "Session Timeout", "Not subscribed").
     session = root.find("q:Session", QRZ_NS)
     if session is not None:
@@ -138,16 +142,49 @@ def qrz_fetch_state(session_key: str, callsign: str, *, debug: bool = False) -> 
             print(f"  QRZ session error for {callsign}: {err.text}", file=sys.stderr)
     call = root.find("q:Callsign", QRZ_NS)
     if call is None:
-        return None
-    state = call.find("q:state", QRZ_NS)
-    if state is None or not state.text:
-        return None
-    text = state.text.strip().upper()
-    return text if re.fullmatch(r"[A-Z]{2}", text) else None
+        return empty
+
+    state = None
+    state_elem = call.find("q:state", QRZ_NS)
+    if state_elem is not None and state_elem.text:
+        text = state_elem.text.strip().upper()
+        if re.fullmatch(r"[A-Z]{2}", text):
+            state = text
+
+    image = None
+    image_elem = call.find("q:image", QRZ_NS)
+    if image_elem is not None and image_elem.text:
+        candidate = image_elem.text.strip()
+        if candidate.startswith(("http://", "https://")):
+            image = candidate
+
+    return {"state": state, "image": image}
 
 
-def annotate_state_ogs(members: list[dict]) -> None:
-    """Set member['state'] and member['state_og'] in place using QRZ XML API.
+def download_mugshot(callsign: str, url: str) -> str | None:
+    """Download a QRZ profile image. Returns the repo-relative path, or None on failure."""
+    parsed = urllib.parse.urlparse(url)
+    suffix = Path(parsed.path).suffix.lower()
+    if suffix not in MUGSHOT_EXTS:
+        suffix = ".jpg"
+    MUGSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{callsign}{suffix}"
+    dest = MUGSHOT_DIR / filename
+    req = urllib.request.Request(url, headers={"User-Agent": "BKG-Roster-Builder/1.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = resp.read()
+    except (urllib.error.URLError, TimeoutError) as exc:
+        print(f"  QRZ image download failed for {callsign}: {exc}", file=sys.stderr)
+        return None
+    if not data:
+        return None
+    dest.write_bytes(data)
+    return f"{MUGSHOT_REL_DIR}/{filename}"
+
+
+def annotate_qrz(members: list[dict]) -> None:
+    """Set member['state'], member['state_og'], and member['mugshot_path'] in place.
 
     Requires env vars QRZ_USERNAME and QRZ_PASSWORD (an XML-subscription QRZ
     account). Raises RuntimeError if creds are missing or login fails.
@@ -155,6 +192,7 @@ def annotate_state_ogs(members: list[dict]) -> None:
     for member in members:
         member["state"] = None
         member["state_og"] = False
+        member["mugshot_path"] = None
 
     username = os.environ.get("QRZ_USERNAME")
     password = os.environ.get("QRZ_PASSWORD")
@@ -166,9 +204,14 @@ def annotate_state_ogs(members: list[dict]) -> None:
         raise RuntimeError("QRZ login failed")
 
     for idx, member in enumerate(members):
-        member["state"] = qrz_fetch_state(session_key, member["callsign"], debug=(idx == 0))
+        info = qrz_fetch_callsign(session_key, member["callsign"], debug=(idx == 0))
+        member["state"] = info["state"]
+        if info["image"]:
+            member["mugshot_path"] = download_mugshot(member["callsign"], info["image"])
     resolved = sum(1 for m in members if m.get("state"))
+    mugshots = sum(1 for m in members if m.get("mugshot_path"))
     print(f"  QRZ resolved state for {resolved}/{len(members)} members", file=sys.stderr)
+    print(f"  QRZ downloaded mugshot for {mugshots}/{len(members)} members", file=sys.stderr)
 
     earliest: dict[str, dict] = {}
     for member in sorted(members, key=lambda m: m["number"]):
@@ -204,20 +247,34 @@ def state_og_badge_html(member: dict) -> str:
     return f'\n                    <div class="state-og-badge">{state} OG</div>'
 
 
+def mugshot_inner_html(member: dict) -> str:
+    path = member.get("mugshot_path")
+    if path:
+        callsign = html_escape(member["callsign"])
+        src = html_escape(path)
+        return (
+            f'<img class="mugshot-photo" src="{src}" alt="{callsign} QRZ profile photo" loading="lazy">'
+        )
+    return (
+        '<div class="mugshot-placeholder">\n'
+        '                            <span class="icon">👤</span>\n'
+        '                            MUGSHOT<br>PENDING\n'
+        '                        </div>'
+    )
+
+
 def render_founder_card(member: dict) -> str:
     callsign = html_escape(member["callsign"])
     name = html_escape(member["name"])
     number = f"BKG #{member['number']:03d}"
     state_og_html = state_og_badge_html(member)
+    mugshot_inner = mugshot_inner_html(member)
     return f"""                <!-- FOUNDER - {callsign} - THE OG BRASS POUNDER -->
                 <div class="member-card founder-card">{state_og_html}
                     <div class="founder-badge">👑 GODFATHER 👑</div>
                     <div class="founder-flames"></div>
                     <div class="mugshot founder-mugshot">
-                        <div class="mugshot-placeholder">
-                            <span class="icon">👤</span>
-                            MUGSHOT<br>PENDING
-                        </div>
+                        {mugshot_inner}
                         <div class="founder-glow"></div>
                     </div>
                     <div class="member-info founder-info">
@@ -241,13 +298,11 @@ def render_member_card(member: dict, *, is_og: bool, is_new: bool) -> str:
     elif is_new:
         badge_html = '\n                    <div class="new-badge">NEW!!</div>'
     badge_html += state_og_badge_html(member)
+    mugshot_inner = mugshot_inner_html(member)
     return f"""                <!-- {callsign} -->
                 <div class="member-card">{badge_html}
                     <div class="mugshot">
-                        <div class="mugshot-placeholder">
-                            <span class="icon">👤</span>
-                            MUGSHOT<br>PENDING
-                        </div>
+                        {mugshot_inner}
                     </div>
                     <div class="member-info">
                         <a href="https://www.qrz.com/db/{callsign}" target="_blank" class="member-callsign">{callsign}</a>
@@ -359,8 +414,8 @@ def main() -> int:
         return 1
     print(f"Parsed {len(members)} members (BKG #{members[0]['number']:03d}–#{members[-1]['number']:03d})")
 
-    print("Looking up state for each member via QRZ XML API")
-    annotate_state_ogs(members)
+    print("Looking up state + mugshot for each member via QRZ XML API")
+    annotate_qrz(members)
     og_count = sum(1 for m in members if m.get("state_og"))
     print(f"Marked {og_count} state OG(s) across {len({m['state'] for m in members if m.get('state')})} state(s)")
 
