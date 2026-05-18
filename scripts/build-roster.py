@@ -27,6 +27,7 @@ INDEX_PATH = REPO_ROOT / "index.html"
 MEMBERS_TXT_PATH = REPO_ROOT / "members.txt"
 MUGSHOT_DIR = REPO_ROOT / "images" / "mugshots"
 MUGSHOT_REL_DIR = "images/mugshots"
+MUGSHOT_OVERRIDE_DIR = REPO_ROOT / "images" / "mugshots-override"
 MUGSHOT_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 NEW_BADGE_LIMIT = 3  # last N members get the "NEW!!" badge
@@ -161,6 +162,21 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
     return {"state": state, "image": image}
 
 
+def local_override_mugshot(callsign: str) -> str | None:
+    """If images/mugshots-override/<callsign>.<ext> exists, copy it into the build
+    mugshot dir and return its repo-relative path. Otherwise return None."""
+    if not MUGSHOT_OVERRIDE_DIR.is_dir():
+        return None
+    for ext in MUGSHOT_EXTS:
+        src = MUGSHOT_OVERRIDE_DIR / f"{callsign}{ext}"
+        if src.is_file():
+            MUGSHOT_DIR.mkdir(parents=True, exist_ok=True)
+            dest = MUGSHOT_DIR / f"{callsign}{ext}"
+            dest.write_bytes(src.read_bytes())
+            return f"{MUGSHOT_REL_DIR}/{callsign}{ext}"
+    return None
+
+
 def download_mugshot(callsign: str, url: str) -> str | None:
     """Download a QRZ profile image. Returns the repo-relative path, or None on failure."""
     parsed = urllib.parse.urlparse(url)
@@ -206,12 +222,15 @@ def annotate_qrz(members: list[dict]) -> None:
     for idx, member in enumerate(members):
         info = qrz_fetch_callsign(session_key, member["callsign"], debug=(idx == 0))
         member["state"] = info["state"]
-        if info["image"]:
+        override = local_override_mugshot(member["callsign"])
+        if override:
+            member["mugshot_path"] = override
+        elif info["image"]:
             member["mugshot_path"] = download_mugshot(member["callsign"], info["image"])
     resolved = sum(1 for m in members if m.get("state"))
     mugshots = sum(1 for m in members if m.get("mugshot_path"))
     print(f"  QRZ resolved state for {resolved}/{len(members)} members", file=sys.stderr)
-    print(f"  QRZ downloaded mugshot for {mugshots}/{len(members)} members", file=sys.stderr)
+    print(f"  Mugshot resolved for {mugshots}/{len(members)} members (local overrides preferred)", file=sys.stderr)
 
     earliest: dict[str, dict] = {}
     for member in sorted(members, key=lambda m: m["number"]):
