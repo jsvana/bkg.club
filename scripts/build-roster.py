@@ -9,6 +9,7 @@ Ham2K PoLo callsign notes file (auto-generated, not manually edited).
 
 import csv
 import io
+import json
 import os
 import re
 import sys
@@ -370,6 +371,30 @@ def render_roster_block(members: list[dict]) -> str:
     return "\n\n".join(cards)
 
 
+def render_map_data(members: list[dict]) -> str:
+    """Build the JSON map data: {state_abbr: [{"call", "name", "num"}, ...]}.
+
+    Only members whose QRZ state resolved to a two-letter code are included.
+    Consumed by the territory map in index.html (#bkg-map-data).
+    """
+    by_state: dict[str, list[dict]] = {}
+    for member in members:
+        state = member.get("state")
+        if not state:
+            continue
+        by_state.setdefault(state, []).append(
+            {
+                "call": member["callsign"],
+                "name": member["name"],
+                "num": member["number"],
+            }
+        )
+    for entries in by_state.values():
+        entries.sort(key=lambda e: e["num"])
+    ordered = {state: by_state[state] for state in sorted(by_state)}
+    return json.dumps(ordered, separators=(",", ":"))
+
+
 def replace_between(html: str, start_marker: str, end_marker: str, replacement: str) -> str:
     pattern = re.compile(
         re.escape(start_marker) + r".*?" + re.escape(end_marker),
@@ -377,7 +402,11 @@ def replace_between(html: str, start_marker: str, end_marker: str, replacement: 
     )
     if not pattern.search(html):
         raise RuntimeError(f"Markers not found: {start_marker} ... {end_marker}")
-    return pattern.sub(start_marker + replacement + end_marker, html, count=1)
+    # Use a function replacement so backslashes in `replacement` (e.g. \uXXXX
+    # in the JSON map data) are inserted literally instead of being treated as
+    # regex backreferences/escapes.
+    new_block = start_marker + replacement + end_marker
+    return pattern.sub(lambda _match: new_block, html, count=1)
 
 
 def update_index(members: list[dict]) -> None:
@@ -400,6 +429,12 @@ def update_index(members: list[dict]) -> None:
         "<!-- BUILD_TIME:START -->",
         "<!-- BUILD_TIME:END -->",
         datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+    )
+    html = replace_between(
+        html,
+        "<!-- MAP_DATA:START -->",
+        "<!-- MAP_DATA:END -->",
+        render_map_data(members),
     )
     INDEX_PATH.write_text(html)
 
