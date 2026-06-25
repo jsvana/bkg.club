@@ -55,9 +55,30 @@
             <div id="kingpinsList"></div>
         </div>
 
+        <div class="view-toggle" id="viewToggle" style="display:none;">
+            <button class="view-btn is-active" data-view="pyramid">🔺 PYRAMID</button>
+            <button class="view-btn" data-view="list">📜 LIST</button>
+        </div>
+
         <div class="section-divider"></div>
 
-        <ul class="tree-root" id="treeRoot"></ul>
+        <!-- Pyramid (top-down org chart, dollar-bill / all-seeing-eye style) -->
+        <div class="pyramid-view" id="pyramidView">
+            <div class="pyramid-hint">🤜 Drag to pan · ⌘/Ctrl-scroll or pinch to zoom 🤜</div>
+            <div class="zoom-controls" id="zoomControls">
+                <button class="zoom-btn" id="zoomOut" aria-label="zoom out" title="Zoom out">−</button>
+                <span class="zoom-level" id="zoomLevel">100%</span>
+                <button class="zoom-btn" id="zoomIn" aria-label="zoom in" title="Zoom in">+</button>
+                <button class="zoom-btn zoom-fit" id="zoomFit" title="Fit whole pyramid">FIT</button>
+            </div>
+            <div class="pyramid-scroll" id="pyramidScroll">
+                <div class="pyramid-stage" id="pyramidStage"></div>
+            </div>
+        </div>
+
+        <!-- List (indented collapsible tree) -->
+        <ul class="tree-root" id="treeRoot" style="display:none;"></ul>
+
         <div class="tree-empty" id="treeEmpty" style="display:none;">
             🤔 No downline data yet!! Once members get a <strong>Sponsor</strong> recorded
             in the roster sheet, the family tree grows here. Recruited somebody?
@@ -206,6 +227,133 @@
         }
 
         roots.forEach(r => rootEl.appendChild(nodeHtml(r)));
+
+        // ---- Render pyramid (top-down org chart, dollar-bill capstone style) ----
+        const EYE_SVG =
+            '<svg class="capstone-eye" viewBox="0 0 120 96" aria-hidden="true">' +
+              '<polygon points="60,4 116,92 4,92" fill="none" stroke="var(--brass-light)" stroke-width="3"/>' +
+              '<polygon points="60,4 116,92 4,92" fill="rgba(212,175,55,0.10)"/>' +
+              '<line x1="38" y1="62" x2="82" y2="62" stroke="var(--brass-light)" stroke-width="2" opacity="0.7"/>' +
+              '<g transform="translate(60,44)">' +
+                '<path d="M -22 0 Q 0 -16 22 0 Q 0 16 -22 0 Z" fill="#000" stroke="var(--brass-light)" stroke-width="2.5"/>' +
+                '<circle cx="0" cy="0" r="7" fill="var(--brass-light)"/>' +
+                '<circle cx="0" cy="0" r="3" fill="#000"/>' +
+              '</g>' +
+            '</svg>';
+
+        function pBrick(m) {
+            const hasKids = m.children.length > 0;
+            const call = esc(m.call);
+            const numTxt = m.num ? '#' + String(m.num).padStart(3, '0') : '';
+            const founder = m.num === 1;
+            const li = document.createElement('li');
+            li.className = 'pnode';
+            li.innerHTML =
+                '<div class="pbrick' + (founder ? ' is-founder' : '') + (hasKids ? ' has-kids' : '') + '"' +
+                    (hasKids ? ' data-kids="' + m.children.length + '"' : '') + '>' +
+                    (founder ? '<span class="pbrick-crown">👑</span>' : '') +
+                    '<a class="pbrick-call" href="https://www.qrz.com/db/' + call + '" target="_blank">' + call + '</a>' +
+                    '<span class="pbrick-num">' + numTxt + '</span>' +
+                    '<span class="pbrick-name">' + esc(m.name) + '</span>' +
+                    (hasKids ? '<span class="pbrick-down">🤜 ' + m.downline + '</span>' : '') +
+                '</div>';
+            if (hasKids) {
+                const ul = document.createElement('ul');
+                m.children.forEach(c => ul.appendChild(pBrick(c)));
+                li.appendChild(ul);
+                li.querySelector('.pbrick').addEventListener('click', e => {
+                    if (e.target.closest('.pbrick-call')) return; // let QRZ links work
+                    li.classList.toggle('pnode-collapsed');
+                });
+            }
+            return li;
+        }
+
+        const stage = document.getElementById('pyramidStage');
+        const ptree = document.createElement('ul');
+        ptree.className = 'ptree';
+        const apexLi = document.createElement('li');
+        apexLi.className = 'pnode pnode-apex';
+        apexLi.innerHTML =
+            '<div class="capstone">' + EYE_SVG +
+                '<div class="capstone-label">BKG</div>' +
+                '<div class="capstone-sub">THE ALL-SEEIN’ GANG</div>' +
+            '</div>';
+        const apexUl = document.createElement('ul');
+        roots.forEach(r => apexUl.appendChild(pBrick(r)));
+        apexLi.appendChild(apexUl);
+        ptree.appendChild(apexLi);
+        stage.appendChild(ptree);
+
+        // ---- View toggle ----
+        const toggle = document.getElementById('viewToggle');
+        const pView = document.getElementById('pyramidView');
+        toggle.style.display = 'flex';
+        toggle.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                toggle.querySelectorAll('.view-btn').forEach(b => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+                const v = btn.dataset.view;
+                pView.style.display = v === 'pyramid' ? 'block' : 'none';
+                rootEl.style.display = v === 'list' ? 'block' : 'none';
+                if (v === 'pyramid') centerPyramid();
+            });
+        });
+        // Pyramid is the default view.
+        pView.style.display = 'block';
+        rootEl.style.display = 'none';
+
+        // ---- Center + drag-to-pan the pyramid ----
+        const scroll = document.getElementById('pyramidScroll');
+        function centerPyramid() {
+            scroll.scrollLeft = (scroll.scrollWidth - scroll.clientWidth) / 2;
+        }
+        requestAnimationFrame(centerPyramid);
+        window.addEventListener('load', centerPyramid);
+        setTimeout(centerPyramid, 150); // after webfonts settle layout
+        window.addEventListener('resize', centerPyramid);
+
+        let dragging = false, startX = 0, startScroll = 0;
+        scroll.addEventListener('pointerdown', e => {
+            if (e.target.closest('a')) return;
+            dragging = true; startX = e.clientX; startScroll = scroll.scrollLeft;
+            scroll.classList.add('is-grabbing');
+        });
+        window.addEventListener('pointermove', e => {
+            if (!dragging) return;
+            scroll.scrollLeft = startScroll - (e.clientX - startX);
+        });
+        window.addEventListener('pointerup', () => {
+            dragging = false; scroll.classList.remove('is-grabbing');
+        });
+
+        // ---- Zoom (buttons + ⌘/Ctrl-wheel + trackpad pinch) ----
+        const ZMIN = 0.1, ZMAX = 1.8;
+        let zoom = 1;
+        const zoomLevelEl = document.getElementById('zoomLevel');
+        function setZoom(z, anchorClientX) {
+            z = Math.min(ZMAX, Math.max(ZMIN, z));
+            const rect = scroll.getBoundingClientRect();
+            const cx = anchorClientX == null ? rect.width / 2 : anchorClientX - rect.left;
+            const contentX = (scroll.scrollLeft + cx) / zoom; // logical x under the anchor
+            zoom = z;
+            stage.style.zoom = z;
+            scroll.scrollLeft = contentX * z - cx;             // keep that point fixed
+            zoomLevelEl.textContent = Math.round(z * 100) + '%';
+        }
+        document.getElementById('zoomIn').addEventListener('click', () => setZoom(zoom * 1.2));
+        document.getElementById('zoomOut').addEventListener('click', () => setZoom(zoom / 1.2));
+        document.getElementById('zoomFit').addEventListener('click', () => {
+            const natural = stage.scrollWidth / zoom;          // unscaled content width
+            setZoom((scroll.clientWidth - 24) / natural);
+            requestAnimationFrame(centerPyramid);
+        });
+        // Trackpad pinch fires wheel events with ctrlKey set; ⌘/Ctrl-wheel too.
+        scroll.addEventListener('wheel', e => {
+            if (!(e.ctrlKey || e.metaKey)) return;             // plain wheel just pans
+            e.preventDefault();
+            setZoom(zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12), e.clientX);
+        }, { passive: false });
     })();
     </script>
 </body>
