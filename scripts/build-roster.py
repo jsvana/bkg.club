@@ -25,6 +25,7 @@ SHEET_CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?forma
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = REPO_ROOT / "index.html"
+TREE_PATH = REPO_ROOT / "tree.html"
 MEMBERS_TXT_PATH = REPO_ROOT / "members.txt"
 MUGSHOT_DIR = REPO_ROOT / "images" / "mugshots"
 MUGSHOT_REL_DIR = "images/mugshots"
@@ -70,6 +71,9 @@ def parse_members(csv_text: str) -> list[dict]:
         name = (row.get("Name") or "").strip()
         join_date = (row.get("Join Date") or "").strip()
         number = parse_member_number(row.get("#") or row.get("BKG #") or "")
+        # "Sponsor" = who recruited this member, as a callsign or BKG number.
+        # Resolved to a sponsor callsign later in resolve_sponsors().
+        sponsor_raw = (row.get("Sponsor") or row.get("Sponsored By") or "").strip()
         if callsign and number:
             members.append(
                 {
@@ -77,6 +81,8 @@ def parse_members(csv_text: str) -> list[dict]:
                     "name": name,
                     "join_date": join_date,
                     "number": number,
+                    "sponsor_raw": sponsor_raw,
+                    "sponsor_call": None,
                 }
             )
     members.sort(key=lambda m: m["number"])
@@ -371,6 +377,53 @@ def render_roster_block(members: list[dict]) -> str:
     return "\n\n".join(cards)
 
 
+def resolve_sponsors(members: list[dict]) -> None:
+    """Resolve each member's raw "Sponsor" value to a sponsor callsign in place.
+
+    A sponsor may be recorded as a callsign ("KI7QCF") or a BKG number ("12",
+    "BKG12", "BKG #12"). Sets member['sponsor_call'] to the matched member's
+    callsign, or None for a root / unrecognized sponsor.
+    """
+    by_call = {m["callsign"].upper(): m for m in members}
+    by_num = {m["number"]: m for m in members}
+    for member in members:
+        raw = (member.get("sponsor_raw") or "").strip()
+        if not raw:
+            continue
+        # Prefer an exact callsign match before parsing a number, so a callsign
+        # like "K5OHY" isn't mistaken for member number 5.
+        sponsor = by_call.get(raw.upper())
+        if sponsor is None:
+            num = parse_member_number(raw)
+            sponsor = by_num.get(num) if num else None
+        if sponsor is None:
+            print(f"  Unrecognized sponsor for {member['callsign']}: {raw!r}", file=sys.stderr)
+        elif sponsor is member:
+            print(f"  Ignoring self-sponsor for {member['callsign']}", file=sys.stderr)
+        else:
+            member["sponsor_call"] = sponsor["callsign"]
+    resolved = sum(1 for m in members if m.get("sponsor_call"))
+    print(f"  Resolved sponsor for {resolved}/{len(members)} members", file=sys.stderr)
+
+
+def render_downline_data(members: list[dict]) -> str:
+    """Build the JSON downline data: flat list of {call, name, num, sponsor}.
+
+    'sponsor' is the sponsoring member's callsign or null (a root). The tree
+    in tree.html (#bkg-downline-data) assembles the forest client-side.
+    """
+    nodes = [
+        {
+            "call": m["callsign"],
+            "name": m["name"],
+            "num": m["number"],
+            "sponsor": m.get("sponsor_call"),
+        }
+        for m in sorted(members, key=lambda m: m["number"])
+    ]
+    return json.dumps(nodes, separators=(",", ":"))
+
+
 def render_map_data(members: list[dict]) -> str:
     """Build the JSON map data: {state_abbr: [{"call", "name", "num"}, ...]}.
 
@@ -439,6 +492,21 @@ def update_index(members: list[dict]) -> None:
     INDEX_PATH.write_text(html)
 
 
+def update_tree(members: list[dict]) -> None:
+    """Inject the downline JSON into tree.html. No-op if tree.html is absent."""
+    if not TREE_PATH.is_file():
+        print(f"  {TREE_PATH.name} not found, skipping downline build", file=sys.stderr)
+        return
+    html = TREE_PATH.read_text()
+    html = replace_between(
+        html,
+        "<!-- DOWNLINE_DATA:START -->",
+        "<!-- DOWNLINE_DATA:END -->",
+        render_downline_data(members),
+    )
+    TREE_PATH.write_text(html)
+
+
 def render_members_txt(members: list[dict]) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     lines = [
@@ -468,6 +536,9 @@ def main() -> int:
         return 1
     print(f"Parsed {len(members)} members (BKG #{members[0]['number']:03d}–#{members[-1]['number']:03d})")
 
+    print("Resolving sponsors for the downline tree")
+    resolve_sponsors(members)
+
     print("Looking up state + mugshot for each member via QRZ XML API")
     annotate_qrz(members)
     og_count = sum(1 for m in members if m.get("state_og"))
@@ -475,6 +546,9 @@ def main() -> int:
 
     update_index(members)
     print(f"Updated {INDEX_PATH.name}")
+
+    update_tree(members)
+    print(f"Updated {TREE_PATH.name}")
 
     MEMBERS_TXT_PATH.write_text(render_members_txt(members))
     print(f"Wrote {MEMBERS_TXT_PATH.name}")
