@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>~*~RECRUIT 2 BKG~*~ Claim Ur Downline!!</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%231a0a00' stroke='%23D4AF37' stroke-width='2'/%3E%3Crect x='5' y='20' width='22' height='6' rx='2' fill='%23D4AF37'/%3E%3Crect x='5' y='16' width='22' height='5' fill='%23D4AF37'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/bkg.css">
+</head>
+<body>
+    <div class="tiled-bg"></div>
+    <div class="grunge-overlay"></div>
+    <div class="floating-knuckle">🤜</div>
+    <div class="floating-knuckle">🤛</div>
+    <div class="floating-knuckle">🤜</div>
+    <div class="floating-knuckle">🤛</div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-area">
+                <div>
+                    <a href="index.html" class="logo-text"><span>BKG</span>.club</a>
+                    <div class="tagline">Get ur brass on the air!! ✨</div>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html#home">HOME</a> |
+                <a href="index.html#bylaws">BYLAWS</a> |
+                <a href="index.html#roster">ROSTER</a> |
+                <a href="index.html#map">MAP</a> |
+                <a href="tree.html">DOWNLINE</a> |
+                <a href="recruit.html" class="active">RECRUIT</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="marquee-container">
+        <div class="marquee-text">
+            ★彡 RECRUITED A NEW BRASS POUNDER?? CLAIM UR DOWNLINE!! 彡★ SEND IN THE QSO!! 彡★ THE SPONSOR + THE NEW OP!! 彡★ GROW THE GANG!! 彡★ 2 METER CW OR BUST!!! 彡★
+        </div>
+    </div>
+
+    <main class="main-wrapper">
+        <a href="index.html" class="back-link">⟵ BACK 2 HQ</a>
+        <h2 class="section-title">RECRUIT INTAKE</h2>
+        <div class="section-subtitle">🤜 Worked a new op on 2m CW? Sponsor 'em into the gang!! 🤜</div>
+
+        <!-- This warning auto-hides once GOOGLE_FORM is wired up below. -->
+        <div class="config-warning" id="configWarning">
+            ⚠️ SETUP PENDING: this form isn't connected to its Google Form yet.
+            See <strong>docs/DOWNLINE-SETUP.md</strong>. Until then, submissions are disabled.
+        </div>
+
+        <div class="form-note">
+            <strong>HOW IT WORKS:</strong> After a 2-meter CW QSO with a non-member, the
+            <em>sponsoring</em> BKG member sends in both ops' info here. A gang officer
+            reviews it, assigns the new op their official <strong>BKG #</strong>, and adds
+            'em to the roster — then they show up in <a href="tree.html" style="color:var(--brass-light);">the downline tree</a>. 🤜📡
+        </div>
+
+        <form class="recruit-form" id="recruitForm">
+            <div class="form-fieldset">
+                <div class="form-legend">🤜 THE SPONSOR (U!)</div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label>Sponsor Callsign <span class="req">*</span></label>
+                        <input type="text" id="sponsorCall" required placeholder="e.g. KI7QCF" autocomplete="off">
+                    </div>
+                    <div class="form-row">
+                        <label>Sponsor BKG #</label>
+                        <input type="text" id="sponsorNum" placeholder="e.g. 1" autocomplete="off">
+                        <div class="form-hint">Leave blank if u don't remember it</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-fieldset">
+                <div class="form-legend">🆕 THE NEW BRASS POUNDER</div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label>New Op Callsign <span class="req">*</span></label>
+                        <input type="text" id="recruitCall" required placeholder="e.g. W1ABC" autocomplete="off">
+                    </div>
+                    <div class="form-row">
+                        <label>New Op Name <span class="req">*</span></label>
+                        <input type="text" id="recruitName" required placeholder="e.g. Jane Doe" autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label>New Op QTH (State)</label>
+                    <input type="text" id="recruitQth" placeholder="e.g. Utah" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="form-fieldset">
+                <div class="form-legend">📻 THE QSO</div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label>Date (UTC)</label>
+                        <input type="date" id="qsoDate">
+                    </div>
+                    <div class="form-row">
+                        <label>Time (UTC)</label>
+                        <input type="time" id="qsoTime">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label>Band / Mode</label>
+                    <input type="text" id="qsoBand" value="2m CW" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="form-fieldset">
+                <div class="form-legend">✍️ EXTRA</div>
+                <div class="form-row">
+                    <label>Notes for the officers</label>
+                    <textarea id="notes" rows="3" placeholder="POTA/SOTA activation? Anything else worth noting?"></textarea>
+                </div>
+                <div class="form-row">
+                    <label>Ur email (so we can reach u)</label>
+                    <input type="email" id="email" placeholder="optional" autocomplete="off">
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">🤜 SEND IT IN!! 🤜</button>
+        </form>
+
+        <div class="form-success" id="formSuccess">
+            <h2>🤜 ROGER ROGER!! 🤜</h2>
+            <p>Ur recruit got pounded into the queue!! An officer will review it,
+               assign a BKG #, and grow the downline.</p>
+            <p>73 de BKG 📡</p>
+            <p style="margin-top:16px;">
+                <a href="tree.html" class="back-link">SEE THE DOWNLINE ⟶</a>
+            </p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-text">© 2024 BRASS KNUCKLE GANG | All Rights Reserved | 73 de BKG 🤜</div>
+        <div class="footer-links">
+            <a href="tree.html">DOWNLINE</a>
+            <a href="index.html#roster">ROSTER</a>
+            <a href="index.html#home">TOP</a>
+        </div>
+    </footer>
+
+    <!-- Hidden target so the cross-origin POST to Google Forms doesn't navigate away. -->
+    <iframe name="bkg-form-sink" id="formSink" style="display:none;"></iframe>
+
+    <script>
+    /* ============================================================
+       GOOGLE FORM WIRING
+       ------------------------------------------------------------
+       The site is static, so submissions POST to a Google Form,
+       landing in a Sheet that gang officers review (admin-review
+       flow). To connect it, create a Google Form with one question
+       per field below, then fill in the action URL + entry IDs.
+       Full walkthrough: docs/DOWNLINE-SETUP.md
+
+       Set GOOGLE_FORM.action to the form's "formResponse" URL and
+       map each field to its entry.<NUMBER> id. Leave action empty
+       to keep the form disabled (shows the setup warning).
+       ============================================================ */
+    const GOOGLE_FORM = {
+        action: "", // e.g. "https://docs.google.com/forms/d/e/FORM_ID/formResponse"
+        fields: {
+            sponsorCall: "entry.0000000001",
+            sponsorNum:  "entry.0000000002",
+            recruitCall: "entry.0000000003",
+            recruitName: "entry.0000000004",
+            recruitQth:  "entry.0000000005",
+            qsoDate:     "entry.0000000006",
+            qsoTime:     "entry.0000000007",
+            qsoBand:     "entry.0000000008",
+            notes:       "entry.0000000009",
+            email:       "entry.0000000010"
+        }
+    };
+
+    (function () {
+        const form = document.getElementById('recruitForm');
+        const warning = document.getElementById('configWarning');
+        const submitBtn = document.getElementById('submitBtn');
+        const success = document.getElementById('formSuccess');
+        const sink = document.getElementById('formSink');
+        const configured = !!GOOGLE_FORM.action;
+
+        if (configured) {
+            warning.style.display = 'none';
+            form.action = GOOGLE_FORM.action;
+            form.method = 'POST';
+            form.target = 'bkg-form-sink';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⚙️ FORM NOT CONNECTED YET';
+        }
+
+        form.addEventListener('submit', function (e) {
+            if (!configured) { e.preventDefault(); return; }
+
+            // Build hidden Google Form fields from our inputs right before submit.
+            Object.keys(GOOGLE_FORM.fields).forEach(function (key) {
+                const src = document.getElementById(key);
+                if (!src) return;
+                let hidden = form.querySelector('input[name="' + GOOGLE_FORM.fields[key] + '"]');
+                if (!hidden) {
+                    hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = GOOGLE_FORM.fields[key];
+                    form.appendChild(hidden);
+                }
+                hidden.value = src.value || '';
+            });
+
+            // The POST targets the hidden iframe; Google returns an opaque page
+            // we can't read, so we optimistically show success on its load.
+            let done = false;
+            sink.addEventListener('load', function () {
+                if (done) return;
+                done = true;
+                form.style.display = 'none';
+                document.querySelector('.form-note').style.display = 'none';
+                success.classList.add('show');
+                success.scrollIntoView({ behavior: 'smooth' });
+            });
+            // Let the native POST proceed to the iframe.
+        });
+    })();
+    </script>
+</body>
+</html>
