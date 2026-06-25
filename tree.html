@@ -64,7 +64,13 @@
 
         <!-- Pyramid (top-down org chart, dollar-bill / all-seeing-eye style) -->
         <div class="pyramid-view" id="pyramidView">
-            <div class="pyramid-hint">🤜 Drag / scroll sideways to follow the downline 🤜</div>
+            <div class="pyramid-hint">🤜 Drag to pan · ⌘/Ctrl-scroll or pinch to zoom 🤜</div>
+            <div class="zoom-controls" id="zoomControls">
+                <button class="zoom-btn" id="zoomOut" aria-label="zoom out" title="Zoom out">−</button>
+                <span class="zoom-level" id="zoomLevel">100%</span>
+                <button class="zoom-btn" id="zoomIn" aria-label="zoom in" title="Zoom in">+</button>
+                <button class="zoom-btn zoom-fit" id="zoomFit" title="Fit whole pyramid">FIT</button>
+            </div>
             <div class="pyramid-scroll" id="pyramidScroll">
                 <div class="pyramid-stage" id="pyramidStage"></div>
             </div>
@@ -320,6 +326,34 @@
         window.addEventListener('pointerup', () => {
             dragging = false; scroll.classList.remove('is-grabbing');
         });
+
+        // ---- Zoom (buttons + ⌘/Ctrl-wheel + trackpad pinch) ----
+        const ZMIN = 0.1, ZMAX = 1.8;
+        let zoom = 1;
+        const zoomLevelEl = document.getElementById('zoomLevel');
+        function setZoom(z, anchorClientX) {
+            z = Math.min(ZMAX, Math.max(ZMIN, z));
+            const rect = scroll.getBoundingClientRect();
+            const cx = anchorClientX == null ? rect.width / 2 : anchorClientX - rect.left;
+            const contentX = (scroll.scrollLeft + cx) / zoom; // logical x under the anchor
+            zoom = z;
+            stage.style.zoom = z;
+            scroll.scrollLeft = contentX * z - cx;             // keep that point fixed
+            zoomLevelEl.textContent = Math.round(z * 100) + '%';
+        }
+        document.getElementById('zoomIn').addEventListener('click', () => setZoom(zoom * 1.2));
+        document.getElementById('zoomOut').addEventListener('click', () => setZoom(zoom / 1.2));
+        document.getElementById('zoomFit').addEventListener('click', () => {
+            const natural = stage.scrollWidth / zoom;          // unscaled content width
+            setZoom((scroll.clientWidth - 24) / natural);
+            requestAnimationFrame(centerPyramid);
+        });
+        // Trackpad pinch fires wheel events with ctrlKey set; ⌘/Ctrl-wheel too.
+        scroll.addEventListener('wheel', e => {
+            if (!(e.ctrlKey || e.metaKey)) return;             // plain wheel just pans
+            e.preventDefault();
+            setZoom(zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12), e.clientX);
+        }, { passive: false });
     })();
     </script>
 </body>
