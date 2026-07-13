@@ -128,8 +128,13 @@ def qrz_login(username: str, password: str) -> str | None:
 
 
 def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) -> dict:
-    """Look up a callsign. Returns {'state': str|None, 'image': str|None}."""
-    empty = {"state": None, "image": None}
+    """Look up a callsign. Returns {'current_call': str|None, 'state': str|None, 'image': str|None}.
+
+    'current_call' is QRZ's canonical <call> element, which differs from the
+    queried callsign for retired/aliased/vanity calls; callers use it to remap
+    roster entries to the operator's current callsign.
+    """
+    empty = {"current_call": None, "state": None, "image": None}
     raw = _qrz_get_raw({"s": session_key, "callsign": callsign})
     if raw is None:
         return empty
@@ -152,6 +157,16 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
     if call is None:
         return empty
 
+    # QRZ returns the operator's canonical <call>, which may differ from the
+    # queried callsign for retired/aliased/vanity calls. Use it as the
+    # authoritative current callsign.
+    current_call = None
+    call_elem = call.find("q:call", QRZ_NS)
+    if call_elem is not None and call_elem.text:
+        candidate = call_elem.text.strip().upper()
+        if re.fullmatch(r"[A-Z0-9/]+", candidate):
+            current_call = candidate
+
     state = None
     state_elem = call.find("q:state", QRZ_NS)
     if state_elem is not None and state_elem.text:
@@ -166,7 +181,7 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
         if candidate.startswith(("http://", "https://")):
             image = candidate
 
-    return {"state": state, "image": image}
+    return {"current_call": current_call, "state": state, "image": image}
 
 
 def local_override_mugshot(callsign: str) -> str | None:
@@ -228,6 +243,15 @@ def annotate_qrz(members: list[dict]) -> None:
 
     for idx, member in enumerate(members):
         info = qrz_fetch_callsign(session_key, member["callsign"], debug=(idx == 0))
+        # Remap to the operator's current callsign if QRZ reports a different
+        # canonical <call> (e.g. after a vanity/retired-call change).
+        current_call = info.get("current_call")
+        if current_call and current_call != member["callsign"].upper():
+            print(
+                f"  Callsign updated: {member['callsign']} -> {current_call}",
+                file=sys.stderr,
+            )
+            member["callsign"] = current_call
         member["state"] = info["state"]
         override = local_override_mugshot(member["callsign"])
         if override:
