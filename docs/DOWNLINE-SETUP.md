@@ -38,62 +38,49 @@ That's all the tree needs. `scripts/build-roster.py` injects the data into
 
 ---
 
-## 2. The recruit form: connect a Google Form
+## 2. The recruit form: email relay (no backend)
 
-The site is static (GitHub Pages), so the form POSTs to a **Google Form** whose
-responses collect in a Sheet you review (admin-review flow — submissions do
-**not** auto-publish to the tree).
+The site is static (GitHub Pages), so there's no server to receive
+submissions. `recruit.html` POSTs to **[FormSubmit](https://formsubmit.co)** —
+a free, no-signup relay that emails each submission to the gang inbox. Officers
+review it, assign a BKG #, and add the recruit to the roster (admin-review
+flow — submissions do **not** auto-publish to the tree).
 
-### a. Create the Google Form
+The form is already wired and live. There are no API keys and nothing to
+deploy; the only setup is a one-time activation click.
 
-Create a Form with one question (Short answer / Paragraph) per field, in this
-order. Question titles can be anything; the mapping is by entry ID, not title:
+### a. One-time activation (required once)
 
-| Form question                | maps to JS key |
-|------------------------------|----------------|
-| Sponsor Callsign             | `sponsorCall`  |
-| Sponsor BKG #                | `sponsorNum`   |
-| New Op Callsign              | `recruitCall`  |
-| New Op Name                  | `recruitName`  |
-| New Op QTH (State)           | `recruitQth`   |
-| QSO Date (UTC)               | `qsoDate`      |
-| QSO Time (UTC)               | `qsoTime`      |
-| Band / Mode                  | `qsoBand`      |
-| Notes                        | `notes`        |
-| Submitter Email              | `email`        |
+The **first** submission after this goes live triggers a confirmation email
+from FormSubmit to the gang inbox (**k7bkgang@gmail.com**). Open that email and
+click the activation link **once**. After that, every submission is delivered
+automatically. Until it's activated, submissions won't arrive — so send a test
+submission through the live form and click the link when it lands.
 
-### b. Find the action URL + entry IDs
+> The activation email may take a minute and can land in Spam/Promotions — check
+> there if it doesn't show up.
 
-1. Open the live Form, right-click → **View Page Source** (or use the
-   "Get pre-filled link" feature, which is easier).
-2. The **action URL** ends in `/formResponse` — e.g.
-   `https://docs.google.com/forms/d/e/1FAIpQLSxxxx/formResponse`.
-3. Each field has an `entry.<NUMBER>` name. The pre-filled-link trick: fill the
-   form, "Get pre-filled link", and read the `entry.NNNN=value` pairs from the
-   generated URL.
+### b. Where submissions go / changing the inbox
 
-### c. Wire it into `recruit.html`
-
-Near the bottom of `recruit.html`, edit the `GOOGLE_FORM` object:
+The target address lives near the bottom of `recruit.html`:
 
 ```js
-const GOOGLE_FORM = {
-    action: "https://docs.google.com/forms/d/e/1FAIpQLSxxxx/formResponse",
-    fields: {
-        sponsorCall: "entry.1111111111",
-        sponsorNum:  "entry.2222222222",
-        recruitCall: "entry.3333333333",
-        // ...the rest
-    }
-};
+const RELAY_INBOX = "k7bkgang@gmail.com";
 ```
 
-Once `action` is set, the on-page "SETUP PENDING" warning disappears and the
-form goes live. Leaving `action` empty keeps the form disabled.
+Change that string and re-activate (step **a**) to point submissions at a
+different inbox. Each email arrives as a readable table with the sponsor, the
+new op, the QSO details, and notes; if the submitter gave an email it's set as
+the reply-to, so officers can reply to them directly.
 
-### d. Approving a submission
+> **Spam note:** the address appears in the page source. FormSubmit also
+> supports a hashed alias endpoint (`formsubmit.co/<your-random-string>`) that
+> hides the raw address — grab your string from the confirmation email and swap
+> it into `RELAY_ENDPOINT` if harvesting becomes a problem.
 
-1. Review the Form-response Sheet.
+### c. Approving a submission
+
+1. Read the emailed submission.
 2. To accept: add the new op to the **roster sheet** as usual (assign the next
    BKG #) and set their **`Sponsor`** to the submitting member's callsign/number.
 3. Next build → they appear in the roster, map, and the downline tree.
@@ -105,9 +92,9 @@ form goes live. Leaving `action` empty keeps the form disabled.
 | File                          | What it is |
 |-------------------------------|------------|
 | `tree.html`                   | Downline tree page (data injected at build) |
-| `recruit.html`                | Recruit submission form (POSTs to Google Form) |
+| `recruit.html`                | Recruit submission form (emails via FormSubmit relay) |
 | `assets/bkg.css`              | Shared theme for the two new pages |
 | `scripts/build-roster.py`     | Now also resolves sponsors + builds the tree |
 
-No new secrets or services beyond the Google Form. The form needs no API keys —
-it POSTs straight to Google.
+No new secrets or services beyond the free FormSubmit relay. The form needs no
+API keys — it POSTs straight to FormSubmit, which emails the gang inbox.

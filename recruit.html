@@ -48,12 +48,6 @@
         <h2 class="section-title">RECRUIT INTAKE</h2>
         <div class="section-subtitle">🤜 Worked a new op on 2m CW? Sponsor 'em into the gang!! 🤜</div>
 
-        <!-- This warning auto-hides once GOOGLE_FORM is wired up below. -->
-        <div class="config-warning" id="configWarning">
-            ⚠️ SETUP PENDING: this form isn't connected to its Google Form yet.
-            See <strong>docs/DOWNLINE-SETUP.md</strong>. Until then, submissions are disabled.
-        </div>
-
         <div class="form-note">
             <strong>HOW IT WORKS:</strong> After a 2-meter CW QSO with a non-member, the
             <em>sponsoring</em> BKG member sends in both ops' info here. A gang officer
@@ -126,6 +120,8 @@
             </div>
 
             <button type="submit" class="submit-btn" id="submitBtn">🤜 SEND IT IN!! 🤜</button>
+
+            <div class="form-error" id="formError"></div>
         </form>
 
         <div class="form-success" id="formSuccess">
@@ -148,86 +144,113 @@
         </div>
     </footer>
 
-    <!-- Hidden target so the cross-origin POST to Google Forms doesn't navigate away. -->
-    <iframe name="bkg-form-sink" id="formSink" style="display:none;"></iframe>
-
     <script>
     /* ============================================================
-       GOOGLE FORM WIRING
+       EMAIL RELAY WIRING
        ------------------------------------------------------------
-       The site is static, so submissions POST to a Google Form,
-       landing in a Sheet that gang officers review (admin-review
-       flow). To connect it, create a Google Form with one question
-       per field below, then fill in the action URL + entry IDs.
-       Full walkthrough: docs/DOWNLINE-SETUP.md
+       The site is static (GitHub Pages), so there's no backend to
+       receive submissions. Instead we POST to FormSubmit, a free
+       no-signup relay that forwards each submission to the gang
+       inbox below — officers review it, assign a BKG #, and add
+       the recruit to the roster (admin-review flow; nothing
+       auto-publishes to the tree).
 
-       Set GOOGLE_FORM.action to the form's "formResponse" URL and
-       map each field to its entry.<NUMBER> id. Leave action empty
-       to keep the form disabled (shows the setup warning).
+       ONE-TIME ACTIVATION: the very first submission triggers a
+       confirmation email from FormSubmit to RELAY_INBOX. Click the
+       link in that email once to activate the relay; every
+       submission after that is delivered automatically.
+
+       To change where submissions go, edit RELAY_INBOX.
        ============================================================ */
-    const GOOGLE_FORM = {
-        action: "", // e.g. "https://docs.google.com/forms/d/e/FORM_ID/formResponse"
-        fields: {
-            sponsorCall: "entry.0000000001",
-            sponsorNum:  "entry.0000000002",
-            recruitCall: "entry.0000000003",
-            recruitName: "entry.0000000004",
-            recruitQth:  "entry.0000000005",
-            qsoDate:     "entry.0000000006",
-            qsoTime:     "entry.0000000007",
-            qsoBand:     "entry.0000000008",
-            notes:       "entry.0000000009",
-            email:       "entry.0000000010"
-        }
-    };
+    const RELAY_INBOX = "k7bkgang@gmail.com";
+    const RELAY_ENDPOINT = "https://formsubmit.co/ajax/" + RELAY_INBOX;
+
+    // [input id, human-readable label used in the email], in email order.
+    const FIELDS = [
+        ["sponsorCall", "Sponsor Callsign"],
+        ["sponsorNum",  "Sponsor BKG #"],
+        ["recruitCall", "New Op Callsign"],
+        ["recruitName", "New Op Name"],
+        ["recruitQth",  "New Op QTH (State)"],
+        ["qsoDate",     "QSO Date (UTC)"],
+        ["qsoTime",     "QSO Time (UTC)"],
+        ["qsoBand",     "Band / Mode"],
+        ["notes",       "Notes"],
+        ["email",       "Submitter Email"]
+    ];
 
     (function () {
         const form = document.getElementById('recruitForm');
-        const warning = document.getElementById('configWarning');
         const submitBtn = document.getElementById('submitBtn');
         const success = document.getElementById('formSuccess');
-        const sink = document.getElementById('formSink');
-        const configured = !!GOOGLE_FORM.action;
+        const errorBox = document.getElementById('formError');
 
-        if (configured) {
-            warning.style.display = 'none';
-            form.action = GOOGLE_FORM.action;
-            form.method = 'POST';
-            form.target = 'bkg-form-sink';
-        } else {
-            submitBtn.disabled = true;
-            submitBtn.textContent = '⚙️ FORM NOT CONNECTED YET';
+        function showError(msg) {
+            errorBox.innerHTML = msg;
+            errorBox.classList.add('show');
         }
 
         form.addEventListener('submit', function (e) {
-            if (!configured) { e.preventDefault(); return; }
+            e.preventDefault();
+            errorBox.classList.remove('show');
 
-            // Build hidden Google Form fields from our inputs right before submit.
-            Object.keys(GOOGLE_FORM.fields).forEach(function (key) {
-                const src = document.getElementById(key);
-                if (!src) return;
-                let hidden = form.querySelector('input[name="' + GOOGLE_FORM.fields[key] + '"]');
-                if (!hidden) {
-                    hidden = document.createElement('input');
-                    hidden.type = 'hidden';
-                    hidden.name = GOOGLE_FORM.fields[key];
-                    form.appendChild(hidden);
+            // Build a readable payload keyed by human labels so the email
+            // is easy to scan. FormSubmit control fields start with "_".
+            const recruitCall = (document.getElementById('recruitCall').value || '').trim();
+            const sponsorCall = (document.getElementById('sponsorCall').value || '').trim();
+            const payload = {
+                _subject: "🤜 New BKG recruit: " + (recruitCall || '?') +
+                          " (via " + (sponsorCall || '?') + ")",
+                _template: "table",
+                _captcha: "false"
+            };
+            FIELDS.forEach(function (f) {
+                const el = document.getElementById(f[0]);
+                payload[f[1]] = el ? el.value : '';
+            });
+            // Let officers reply straight to the submitter when they gave an email.
+            const replyTo = (document.getElementById('email').value || '').trim();
+            if (replyTo) payload._replyto = replyTo;
+
+            submitBtn.disabled = true;
+            const originalLabel = submitBtn.textContent;
+            submitBtn.textContent = '📡 SENDING...';
+
+            fetch(RELAY_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(function (res) { return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; }); })
+            .then(function (r) {
+                if (r.ok && String(r.data.success) === 'true') {
+                    form.style.display = 'none';
+                    document.querySelector('.form-note').style.display = 'none';
+                    success.classList.add('show');
+                    success.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    throw new Error((r.data && r.data.message) || 'Relay rejected the submission.');
                 }
-                hidden.value = src.value || '';
+            })
+            .catch(function (err) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalLabel;
+                const mailto = 'mailto:' + RELAY_INBOX +
+                    '?subject=' + encodeURIComponent('New BKG recruit: ' + (recruitCall || '')) +
+                    '&body=' + encodeURIComponent(
+                        FIELDS.map(function (f) {
+                            const el = document.getElementById(f[0]);
+                            return f[1] + ': ' + (el ? el.value : '');
+                        }).join('\n')
+                    );
+                showError(
+                    "📡 Couldn't send it in right now (" + (err.message || 'network error') + ").<br>" +
+                    "Try again in a sec, or <a href=\"" + mailto + "\">email it straight to the gang</a>."
+                );
             });
-
-            // The POST targets the hidden iframe; Google returns an opaque page
-            // we can't read, so we optimistically show success on its load.
-            let done = false;
-            sink.addEventListener('load', function () {
-                if (done) return;
-                done = true;
-                form.style.display = 'none';
-                document.querySelector('.form-note').style.display = 'none';
-                success.classList.add('show');
-                success.scrollIntoView({ behavior: 'smooth' });
-            });
-            // Let the native POST proceed to the iframe.
         });
     })();
     </script>

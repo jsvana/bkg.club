@@ -644,6 +644,20 @@ body {
     font-size: 0.8rem;
     text-align: center;
 }
+.form-error {
+    display: none;
+    background: #2a0000;
+    color: var(--brass-light);
+    border: 3px dashed var(--blood-red);
+    padding: 12px;
+    margin-top: 16px;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.82rem;
+    text-align: center;
+    line-height: 1.5;
+}
+.form-error.show { display: block; }
+.form-error a { color: var(--brass-light); text-decoration: underline; }
 
 /* Footer */
 .footer {
