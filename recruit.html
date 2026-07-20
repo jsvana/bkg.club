@@ -125,6 +125,16 @@
             <div class="form-error" id="formError"></div>
         </form>
 
+        <div class="form-confirm" id="formConfirm">
+            <h2>👀 DOUBLE-CHECK UR INTAKE</h2>
+            <p class="confirm-lead">This is what gets pounded into the queue. Look it over, then send it in!</p>
+            <dl class="confirm-summary" id="confirmSummary"></dl>
+            <div class="confirm-actions">
+                <button type="button" class="back-link" id="confirmBack">⟵ GO BACK &amp; EDIT</button>
+                <button type="button" class="submit-btn" id="confirmSend">🤜 YEP, SEND IT!! 🤜</button>
+            </div>
+        </div>
+
         <div class="form-success" id="formSuccess">
             <h2>🤜 ROGER ROGER!! 🤜</h2>
             <p>Ur recruit got pounded into the queue!! An officer will review it,
@@ -182,23 +192,70 @@
 
     (function () {
         const form = document.getElementById('recruitForm');
+        const note = document.querySelector('.form-note');
         const submitBtn = document.getElementById('submitBtn');
         const success = document.getElementById('formSuccess');
         const errorBox = document.getElementById('formError');
+        const confirmPanel = document.getElementById('formConfirm');
+        const confirmSummary = document.getElementById('confirmSummary');
+        const confirmBack = document.getElementById('confirmBack');
+        const confirmSend = document.getElementById('confirmSend');
+        const CONFIRM_LABEL = confirmSend.textContent;
 
         function showError(msg) {
             errorBox.innerHTML = msg;
             errorBox.classList.add('show');
         }
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+        function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
 
+        function showForm() {
+            confirmPanel.classList.remove('show');
+            form.style.display = '';
+            if (note) note.style.display = '';
+        }
+
+        // STEP 1 — validate required fields, then show the review step.
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             errorBox.classList.remove('show');
 
+            // Enforce the required fields (shows the browser's own prompts).
+            if (!form.reportValidity()) return;
+
+            confirmSummary.innerHTML = FIELDS.map(function (f) {
+                const v = val(f[0]);
+                const cell = v
+                    ? escapeHtml(v)
+                    : '<span class="confirm-blank">— left blank —</span>';
+                return '<dt>' + escapeHtml(f[1]) + '</dt><dd>' + cell + '</dd>';
+            }).join('');
+
+            confirmSend.disabled = false;
+            confirmSend.textContent = CONFIRM_LABEL;
+            form.style.display = 'none';
+            if (note) note.style.display = 'none';
+            confirmPanel.classList.add('show');
+            confirmPanel.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Back out of the review step to keep editing.
+        confirmBack.addEventListener('click', function () {
+            showForm();
+            form.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // STEP 2 — confirmed: actually relay the submission.
+        confirmSend.addEventListener('click', function () {
+            const recruitCall = val('recruitCall');
+            const sponsorCall = val('sponsorCall');
+
             // Build a readable payload keyed by human labels so the email
             // is easy to scan. FormSubmit control fields start with "_".
-            const recruitCall = (document.getElementById('recruitCall').value || '').trim();
-            const sponsorCall = (document.getElementById('sponsorCall').value || '').trim();
             const payload = {
                 _subject: "🤜 New BKG recruit: " + (recruitCall || '?') +
                           " (via " + (sponsorCall || '?') + ")",
@@ -210,12 +267,11 @@
                 payload[f[1]] = el ? el.value : '';
             });
             // Let officers reply straight to the submitter when they gave an email.
-            const replyTo = (document.getElementById('email').value || '').trim();
+            const replyTo = val('email');
             if (replyTo) payload._replyto = replyTo;
 
-            submitBtn.disabled = true;
-            const originalLabel = submitBtn.textContent;
-            submitBtn.textContent = '📡 SENDING...';
+            confirmSend.disabled = true;
+            confirmSend.textContent = '📡 SENDING...';
 
             fetch(RELAY_ENDPOINT, {
                 method: 'POST',
@@ -228,8 +284,9 @@
             .then(function (res) { return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; }); })
             .then(function (r) {
                 if (r.ok && String(r.data.success) === 'true') {
+                    confirmPanel.classList.remove('show');
                     form.style.display = 'none';
-                    document.querySelector('.form-note').style.display = 'none';
+                    if (note) note.style.display = 'none';
                     success.classList.add('show');
                     success.scrollIntoView({ behavior: 'smooth' });
                 } else {
@@ -237,8 +294,10 @@
                 }
             })
             .catch(function (err) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalLabel;
+                // Return to the form (with data intact) and surface the error.
+                showForm();
+                confirmSend.disabled = false;
+                confirmSend.textContent = CONFIRM_LABEL;
                 const mailto = 'mailto:' + RELAY_INBOX +
                     '?subject=' + encodeURIComponent('New BKG recruit: ' + (recruitCall || '')) +
                     '&body=' + encodeURIComponent(
@@ -251,6 +310,7 @@
                     "📡 Couldn't send it in right now (" + (err.message || 'network error') + ").<br>" +
                     "Try again in a sec, or <a href=\"" + mailto + "\">email it straight to the gang</a>."
                 );
+                errorBox.scrollIntoView({ behavior: 'smooth' });
             });
         });
     })();

@@ -659,6 +659,53 @@ body {
 .form-error.show { display: block; }
 .form-error a { color: var(--brass-light); text-decoration: underline; }
 
+/* Confirmation / review step */
+.form-confirm {
+    display: none;
+    background: linear-gradient(135deg, #2a1a00 0%, #0a0500 100%);
+    border: 4px ridge var(--brass-light);
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.3);
+    padding: 24px;
+    max-width: 640px;
+    margin: 0 auto;
+}
+.form-confirm.show { display: block; }
+.form-confirm h2 {
+    font-family: 'Bangers', cursive;
+    font-size: 2rem;
+    color: var(--brass-light);
+    text-shadow: 2px 2px 0 var(--blood-red);
+    text-align: center;
+    margin-bottom: 8px;
+}
+.form-confirm .confirm-lead {
+    font-family: 'Special Elite', monospace;
+    color: var(--lime);
+    text-align: center;
+    font-size: 0.85rem;
+    margin-bottom: 18px;
+}
+.confirm-summary {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 14px;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+}
+.confirm-summary dt { color: var(--brass); font-weight: bold; }
+.confirm-summary dd { color: #fff; word-break: break-word; margin: 0; }
+.confirm-blank { color: #777; font-style: italic; }
+.confirm-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: stretch;
+}
+.confirm-actions .back-link { margin-bottom: 0; }
+.confirm-actions .submit-btn { width: auto; padding: 10px 22px; font-size: 1.3rem; }
+
 /* Footer */
 .footer {
     background: linear-gradient(180deg, var(--brass-dark) 0%, #000 100%);
