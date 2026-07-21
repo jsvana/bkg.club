@@ -259,19 +259,47 @@ body {
     white-space: nowrap;
 }
 
-/* Tree nodes (nested list) */
+/* ---- Expand / collapse toolbar + legend ---- */
+.tree-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px 14px;
+    margin: 4px 0 6px;
+}
+.tree-ctrl {
+    font-family: 'Bangers', cursive;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    color: var(--brass);
+    background: #111;
+    border: 3px outset var(--brass-dark);
+    padding: 6px 16px;
+}
+.tree-ctrl:hover { color: var(--brass-light); box-shadow: 0 0 12px rgba(212, 175, 55, 0.4); }
+.tree-ctrl:active { border-style: inset; }
+.tree-legend {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.68rem;
+    color: #888;
+    text-align: center;
+}
+.tree-legend .node-count { pointer-events: none; }
+
+/* Tree nodes (nested collapsible list) */
 .tree-root { list-style: none; }
-.tree-children { list-style: none; margin-left: 26px; border-left: 3px dotted var(--brass-dark); padding-left: 14px; }
+.tree-children { list-style: none; margin-left: 22px; border-left: 3px dotted var(--brass-dark); padding-left: 14px; }
 .tree-node { margin: 8px 0; position: relative; }
 
 .node-card {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     background: #111;
     border: 3px ridge var(--brass);
     padding: 8px 12px;
-    transition: all 0.2s;
+    transition: box-shadow 0.2s, transform 0.2s;
 }
 .node-card:hover { box-shadow: 0 0 20px rgba(212, 175, 55, 0.5); transform: translateX(3px); }
 .node-card.is-founder {
@@ -284,12 +312,40 @@ body {
     background: var(--blood-red);
     color: var(--brass-light);
     border: 2px outset var(--brass);
-    width: 26px; height: 26px;
+    width: 32px; height: 32px;
     line-height: 1;
     flex-shrink: 0;
-    font-size: 1rem;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
-.node-toggle.leaf { visibility: hidden; }
+.node-toggle:hover { box-shadow: 0 0 10px rgba(212, 175, 55, 0.6); }
+.node-toggle:active { border-style: inset; }
+.node-toggle.leaf {
+    visibility: hidden;
+    background: none;
+    border: 0 none;
+}
+/* Fist swaps by state: open shows 🤛 (collapse), collapsed shows 🤜 (expand) */
+.node-toggle .toggle-shut { display: none; }
+.node-collapsed > .node-card > .node-toggle .toggle-open { display: none; }
+.node-collapsed > .node-card > .node-toggle .toggle-shut { display: inline; }
+
+.node-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+.node-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    min-width: 0;
+}
 .node-call {
     font-family: 'Bangers', cursive;
     font-size: 1.25rem;
@@ -298,251 +354,29 @@ body {
     text-decoration: none;
 }
 .node-call:hover { color: var(--brass-light); text-shadow: 1px 1px 0 var(--blood-red), 0 0 10px var(--brass); }
-.node-num { font-family: 'Special Elite', monospace; font-size: 0.7rem; color: #666; }
-.node-name { font-family: 'Comic Sans MS', cursive; font-size: 0.8rem; color: #888; flex: 1; }
-.node-crown { font-size: 1rem; }
-.node-downline {
+.node-num { font-family: 'Special Elite', monospace; font-size: 0.7rem; color: #888; }
+.node-name { font-family: 'Comic Sans MS', cursive; font-size: 0.8rem; color: #999; }
+.node-crown { font-size: 1rem; align-self: center; }
+
+/* direct / indirect induction badges */
+.node-counts { display: flex; flex-wrap: wrap; gap: 6px; }
+.node-count {
     font-family: 'Special Elite', monospace;
-    font-size: 0.7rem;
-    color: var(--lime);
-    border: 1px solid var(--lime);
-    padding: 1px 7px;
+    font-size: 0.68rem;
+    padding: 1px 8px;
+    border: 1px solid;
     white-space: nowrap;
+    line-height: 1.5;
 }
+.node-count-direct { color: #000; background: var(--lime); border-color: #000; font-weight: bold; }
+.node-count-indirect { color: var(--brass-light); background: transparent; border-color: var(--brass-dark); }
+
 .node-collapsed > .tree-children { display: none; }
 .tree-empty {
     text-align: center;
     font-family: 'Special Elite', monospace;
     color: #888;
     padding: 30px;
-}
-
-/* ---- View toggle (pyramid / list) ---- */
-.view-toggle {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin: 4px 0 6px;
-}
-.view-btn {
-    font-family: 'Bangers', cursive;
-    font-size: 1.1rem;
-    letter-spacing: 1px;
-    color: var(--brass);
-    background: #111;
-    border: 3px outset var(--brass-dark);
-    padding: 6px 18px;
-}
-.view-btn:hover { color: var(--brass-light); box-shadow: 0 0 12px rgba(212,175,55,0.4); }
-.view-btn.is-active {
-    color: #000;
-    background: linear-gradient(180deg, var(--brass-light) 0%, var(--brass-dark) 100%);
-    border-style: inset;
-}
-
-/* ============================================================
-   DOWNLINE PYRAMID — top-down org chart, dollar-bill capstone
-   ============================================================ */
-.pyramid-view { margin-bottom: 10px; position: relative; }
-
-/* Zoom controls (overlay, top-right of the pyramid) */
-.zoom-controls {
-    position: absolute;
-    top: 34px;
-    right: 12px;
-    z-index: 6;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(0,0,0,0.72);
-    border: 2px ridge var(--brass);
-    padding: 4px 6px;
-}
-.zoom-btn {
-    font-family: 'Bangers', cursive;
-    font-size: 1.05rem;
-    color: var(--brass-light);
-    background: #111;
-    border: 2px outset var(--brass-dark);
-    min-width: 30px;
-    height: 30px;
-    padding: 0 6px;
-    line-height: 1;
-}
-.zoom-btn:hover { color: #fff; box-shadow: 0 0 10px rgba(212,175,55,0.6); }
-.zoom-btn:active { border-style: inset; }
-.zoom-btn.zoom-fit { font-size: 0.8rem; letter-spacing: 1px; }
-.zoom-level {
-    font-family: 'Special Elite', monospace;
-    font-size: 0.72rem;
-    color: var(--brass);
-    min-width: 44px;
-    text-align: center;
-}
-.pyramid-stage { transform-origin: top center; }
-.pyramid-hint {
-    text-align: center;
-    font-family: 'Special Elite', monospace;
-    font-size: 0.72rem;
-    color: #777;
-    margin-bottom: 8px;
-}
-.pyramid-scroll {
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 18px 0 24px;
-    border: 3px ridge var(--brass);
-    /* golden sunburst rays radiating from the apex (top-center) */
-    background:
-        repeating-conic-gradient(from 0deg at 50% 0%,
-            rgba(212,175,55,0.07) 0deg 5deg, transparent 5deg 11deg),
-        radial-gradient(120% 80% at 50% 0%, rgba(139,0,0,0.25) 0%, #050505 60%);
-    cursor: grab;
-}
-.pyramid-scroll.is-grabbing { cursor: grabbing; }
-.pyramid-stage {
-    display: inline-block;
-    min-width: 100%;
-    padding: 0 30px;
-}
-
-/* Org-chart connectors (classic nested-ul tree) */
-.ptree, .ptree ul {
-    display: flex;
-    justify-content: center;
-    list-style: none;
-    padding-top: 22px;
-    position: relative;
-}
-.ptree { padding-top: 0; }
-.pnode {
-    position: relative;
-    padding: 22px 10px 0;
-    text-align: center;
-}
-/* connector lines up to the parent */
-.pnode::before, .pnode::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 50%;
-    width: 50%;
-    height: 22px;
-    border-top: 3px solid var(--brass-dark);
-}
-.pnode::after {
-    right: auto;
-    left: 50%;
-    border-left: 3px solid var(--brass-dark);
-}
-.pnode:first-child::before, .pnode:last-child::after { border: 0 none; }
-.pnode:last-child::before { border-right: 3px solid var(--brass-dark); }
-.pnode:only-child::before, .pnode:only-child::after { display: none; }
-.pnode:only-child { padding-top: 22px; }
-/* vertical drop from a parent down to its children row */
-.ptree ul::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 0;
-    height: 22px;
-    border-left: 3px solid var(--brass-dark);
-}
-/* the apex has no parent — kill its incoming connectors */
-.pnode-apex::before, .pnode-apex::after { display: none; }
-.pnode-apex { padding-top: 0; }
-.pnode-collapsed > ul { display: none; }
-
-/* Brick = a member node */
-.pbrick {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-    min-width: 92px;
-    background: linear-gradient(180deg, #1d1d1d 0%, #0a0a0a 100%);
-    border: 3px ridge var(--brass);
-    padding: 6px 10px;
-    position: relative;
-    transition: all 0.15s;
-}
-.pbrick.has-kids { cursor: pointer; }
-.pbrick:hover { box-shadow: 0 0 18px rgba(212,175,55,0.55); transform: translateY(-2px); z-index: 5; }
-.pbrick.is-founder {
-    background: linear-gradient(180deg, #3a2600 0%, #0a0500 100%);
-    border: 4px ridge var(--brass-light);
-    box-shadow: 0 0 22px rgba(212,175,55,0.5);
-}
-.pbrick-crown { position: absolute; top: -14px; font-size: 1rem; }
-.pbrick-call {
-    font-family: 'Bangers', cursive;
-    font-size: 1.05rem;
-    color: var(--brass);
-    text-shadow: 1px 1px 0 var(--blood-red);
-    text-decoration: none;
-    line-height: 1.1;
-}
-.pbrick.is-founder .pbrick-call { color: var(--brass-light); }
-.pbrick-call:hover { color: var(--brass-light); text-shadow: 1px 1px 0 var(--blood-red), 0 0 8px var(--brass); }
-.pbrick-num { font-family: 'Special Elite', monospace; font-size: 0.6rem; color: #777; }
-.pbrick-name {
-    font-family: 'Comic Sans MS', cursive;
-    font-size: 0.6rem;
-    color: #888;
-    max-width: 110px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.pbrick-down {
-    margin-top: 2px;
-    font-family: 'Special Elite', monospace;
-    font-size: 0.58rem;
-    color: #000;
-    background: var(--lime);
-    border: 1px solid #000;
-    padding: 0 6px;
-}
-.pnode-collapsed > .pbrick.has-kids::after {
-    content: '▸ ' attr(data-kids);
-    position: absolute;
-    bottom: -16px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: 'Special Elite', monospace;
-    font-size: 0.6rem;
-    color: var(--brass);
-    white-space: nowrap;
-}
-
-/* Capstone — the all-seeing-eye apex */
-.capstone {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 4px 10px 8px;
-    filter: drop-shadow(0 0 14px rgba(212,175,55,0.7));
-    animation: capstonePulse 2.4s ease-in-out infinite;
-}
-@keyframes capstonePulse {
-    0%, 100% { filter: drop-shadow(0 0 10px rgba(212,175,55,0.5)); }
-    50% { filter: drop-shadow(0 0 22px rgba(212,175,55,0.9)); }
-}
-.capstone-eye { width: 92px; height: 74px; display: block; }
-.capstone-label {
-    font-family: 'Bangers', cursive;
-    font-size: 1.5rem;
-    color: var(--brass-light);
-    text-shadow: 2px 2px 0 var(--blood-red);
-    letter-spacing: 2px;
-    margin-top: -6px;
-}
-.capstone-sub {
-    font-family: 'Special Elite', monospace;
-    font-size: 0.55rem;
-    color: var(--brass);
-    letter-spacing: 1px;
 }
 
 /* ============================================================
@@ -721,5 +555,9 @@ body {
     .form-grid { grid-template-columns: 1fr; }
     .section-title { font-size: 1.8rem; }
     .logo-text { font-size: 1.5rem; }
-    .node-name { display: none; }
+    /* tighten the tree so deep generations still fit a phone without side-scroll */
+    .tree-children { margin-left: 12px; padding-left: 10px; }
+    .node-card { padding: 7px 9px; gap: 8px; }
+    .node-call { font-size: 1.1rem; }
+    .tree-legend { font-size: 0.62rem; }
 }

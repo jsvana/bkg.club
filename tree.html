@@ -55,29 +55,20 @@
             <div id="kingpinsList"></div>
         </div>
 
-        <div class="view-toggle" id="viewToggle" style="display:none;">
-            <button class="view-btn is-active" data-view="pyramid">🔺 PYRAMID</button>
-            <button class="view-btn" data-view="list">📜 LIST</button>
+        <div class="tree-toolbar" id="treeToolbar" style="display:none;">
+            <button class="tree-ctrl" id="expandAll">➕ EXPAND ALL</button>
+            <button class="tree-ctrl" id="collapseAll">➖ COLLAPSE ALL</button>
+            <span class="tree-legend">
+                <span class="node-count node-count-direct">N direct</span> = pounded in personally ·
+                <span class="node-count node-count-indirect">+N indirect</span> = further down the line
+            </span>
         </div>
 
         <div class="section-divider"></div>
 
-        <!-- Pyramid (top-down org chart, dollar-bill / all-seeing-eye style) -->
-        <div class="pyramid-view" id="pyramidView">
-            <div class="pyramid-hint">🤜 Drag to pan · ⌘/Ctrl-scroll or pinch to zoom 🤜</div>
-            <div class="zoom-controls" id="zoomControls">
-                <button class="zoom-btn" id="zoomOut" aria-label="zoom out" title="Zoom out">−</button>
-                <span class="zoom-level" id="zoomLevel">100%</span>
-                <button class="zoom-btn" id="zoomIn" aria-label="zoom in" title="Zoom in">+</button>
-                <button class="zoom-btn zoom-fit" id="zoomFit" title="Fit whole pyramid">FIT</button>
-            </div>
-            <div class="pyramid-scroll" id="pyramidScroll">
-                <div class="pyramid-stage" id="pyramidStage"></div>
-            </div>
-        </div>
-
-        <!-- List (indented collapsible tree) -->
-        <ul class="tree-root" id="treeRoot" style="display:none;"></ul>
+        <!-- Indented, collapsible family tree. Mobile + desktop friendly:
+             tap a 🤜/🤛 toggle to open or close a subtree. -->
+        <ul class="tree-root" id="treeRoot"></ul>
 
         <div class="tree-empty" id="treeEmpty" style="display:none;">
             🤔 No downline data yet!! Once members get a <strong>Sponsor</strong> recorded
@@ -112,6 +103,7 @@
         const rootEl = document.getElementById('treeRoot');
         const emptyEl = document.getElementById('treeEmpty');
         const statsEl = document.getElementById('treeStats');
+        const toolbarEl = document.getElementById('treeToolbar');
 
         if (!members.length) {
             emptyEl.style.display = 'block';
@@ -141,10 +133,13 @@
         roots.sort(byNum);
         members.forEach(m => m.children.sort(byNum));
 
-        // Total descendants (full downline) for each member.
+        // direct   = members this op personally pounded in (immediate children)
+        // indirect = everyone further down their line (descendants beyond direct)
         function countDownline(m) {
             let total = 0;
             for (const c of m.children) total += 1 + countDownline(c);
+            m.direct = m.children.length;
+            m.indirect = total - m.children.length;
             m.downline = total;
             return total;
         }
@@ -169,10 +164,10 @@
             '</div><div class="tree-stat-label">' + s.label + '</div></div>'
         ).join('');
 
-        // ---- Kingpins: ranked by direct recruits ----
+        // ---- Kingpins: ranked by direct recruits (tie-break: bigger total downline) ----
         const kingpins = members
-            .filter(m => m.children.length)
-            .sort((a, b) => b.children.length - a.children.length || a.num - b.num)
+            .filter(m => m.direct)
+            .sort((a, b) => b.direct - a.direct || b.downline - a.downline || a.num - b.num)
             .slice(0, 5);
         if (kingpins.length) {
             const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
@@ -180,35 +175,48 @@
             document.getElementById('kingpinsList').innerHTML = kingpins.map((m, i) =>
                 '<div class="kingpin-row">' +
                 '<span class="kingpin-rank">' + medals[i] + '</span>' +
-                '<a class="kingpin-call" href="https://www.qrz.com/db/' + esc(m.call) + '" target="_blank">' + esc(m.call) + '</a>' +
+                '<a class="kingpin-call" href="https://www.qrz.com/db/' + esc(m.call) + '" target="_blank" rel="noopener">' + esc(m.call) + '</a>' +
                 '<span class="kingpin-name">' + esc(m.name) + '</span>' +
-                '<span class="kingpin-count">' + m.children.length + ' recruit' + (m.children.length === 1 ? '' : 's') +
-                (m.downline > m.children.length ? ' · ' + m.downline + ' downline' : '') + '</span>' +
+                '<span class="kingpin-count">' + m.direct + ' direct' +
+                (m.indirect ? ' · +' + m.indirect + ' indirect' : '') + '</span>' +
                 '</div>'
             ).join('');
         }
 
-        // ---- Render tree ----
+        // ---- Render one node ----
         function nodeHtml(m) {
             const hasKids = m.children.length > 0;
             const call = esc(m.call);
-            const crown = m.num === 1 ? '<span class="node-crown">👑</span>' : '';
+            const crown = m.num === 1 ? '<span class="node-crown" title="The Godfather — BKG #1">👑</span>' : '';
             const founderClass = m.num === 1 ? ' is-founder' : '';
-            const downBadge = m.downline > 0
-                ? '<span class="node-downline">+' + m.downline + ' downline</span>' : '';
             const numTxt = m.num ? 'BKG #' + String(m.num).padStart(3, '0') : '';
+
+            let counts = '';
+            if (m.direct) {
+                counts += '<span class="node-count node-count-direct" title="Pounded in ' + m.direct +
+                    ' member' + (m.direct === 1 ? '' : 's') + ' personally">' + m.direct + ' direct</span>';
+                if (m.indirect) {
+                    counts += '<span class="node-count node-count-indirect" title="' + m.indirect +
+                        ' more further down the line">+' + m.indirect + ' indirect</span>';
+                }
+            }
 
             const li = document.createElement('li');
             li.className = 'tree-node';
             li.innerHTML =
                 '<div class="node-card' + founderClass + '">' +
-                    '<button class="node-toggle' + (hasKids ? '' : ' leaf') + '" aria-label="toggle">' +
-                        (hasKids ? '−' : '·') + '</button>' +
-                    crown +
-                    '<a class="node-call" href="https://www.qrz.com/db/' + call + '" target="_blank">' + call + '</a>' +
-                    '<span class="node-num">' + numTxt + '</span>' +
-                    '<span class="node-name">' + esc(m.name) + '</span>' +
-                    downBadge +
+                    '<button class="node-toggle' + (hasKids ? '' : ' leaf') + '"' +
+                        (hasKids ? ' aria-expanded="true" aria-label="Collapse ' + call + '’s downline"' : ' aria-hidden="true" tabindex="-1"') + '>' +
+                        (hasKids ? '<span class="toggle-open">🤛</span><span class="toggle-shut">🤜</span>' : '·') + '</button>' +
+                    '<div class="node-body">' +
+                        '<div class="node-head">' +
+                            crown +
+                            '<a class="node-call" href="https://www.qrz.com/db/' + call + '" target="_blank" rel="noopener">' + call + '</a>' +
+                            '<span class="node-num">' + numTxt + '</span>' +
+                            '<span class="node-name">' + esc(m.name) + '</span>' +
+                        '</div>' +
+                        (counts ? '<div class="node-counts">' + counts + '</div>' : '') +
+                    '</div>' +
                 '</div>';
 
             if (hasKids) {
@@ -220,7 +228,9 @@
                 const btn = li.querySelector('.node-toggle');
                 btn.addEventListener('click', () => {
                     const collapsed = li.classList.toggle('node-collapsed');
-                    btn.textContent = collapsed ? '+' : '−';
+                    btn.setAttribute('aria-expanded', String(!collapsed));
+                    btn.setAttribute('aria-label',
+                        (collapsed ? 'Expand ' : 'Collapse ') + m.call + '’s downline');
                 });
             }
             return li;
@@ -228,132 +238,18 @@
 
         roots.forEach(r => rootEl.appendChild(nodeHtml(r)));
 
-        // ---- Render pyramid (top-down org chart, dollar-bill capstone style) ----
-        const EYE_SVG =
-            '<svg class="capstone-eye" viewBox="0 0 120 96" aria-hidden="true">' +
-              '<polygon points="60,4 116,92 4,92" fill="none" stroke="var(--brass-light)" stroke-width="3"/>' +
-              '<polygon points="60,4 116,92 4,92" fill="rgba(212,175,55,0.10)"/>' +
-              '<line x1="38" y1="62" x2="82" y2="62" stroke="var(--brass-light)" stroke-width="2" opacity="0.7"/>' +
-              '<g transform="translate(60,44)">' +
-                '<path d="M -22 0 Q 0 -16 22 0 Q 0 16 -22 0 Z" fill="#000" stroke="var(--brass-light)" stroke-width="2.5"/>' +
-                '<circle cx="0" cy="0" r="7" fill="var(--brass-light)"/>' +
-                '<circle cx="0" cy="0" r="3" fill="#000"/>' +
-              '</g>' +
-            '</svg>';
-
-        function pBrick(m) {
-            const hasKids = m.children.length > 0;
-            const call = esc(m.call);
-            const numTxt = m.num ? '#' + String(m.num).padStart(3, '0') : '';
-            const founder = m.num === 1;
-            const li = document.createElement('li');
-            li.className = 'pnode';
-            li.innerHTML =
-                '<div class="pbrick' + (founder ? ' is-founder' : '') + (hasKids ? ' has-kids' : '') + '"' +
-                    (hasKids ? ' data-kids="' + m.children.length + '"' : '') + '>' +
-                    (founder ? '<span class="pbrick-crown">👑</span>' : '') +
-                    '<a class="pbrick-call" href="https://www.qrz.com/db/' + call + '" target="_blank">' + call + '</a>' +
-                    '<span class="pbrick-num">' + numTxt + '</span>' +
-                    '<span class="pbrick-name">' + esc(m.name) + '</span>' +
-                    (hasKids ? '<span class="pbrick-down">🤜 ' + m.downline + '</span>' : '') +
-                '</div>';
-            if (hasKids) {
-                const ul = document.createElement('ul');
-                m.children.forEach(c => ul.appendChild(pBrick(c)));
-                li.appendChild(ul);
-                li.querySelector('.pbrick').addEventListener('click', e => {
-                    if (e.target.closest('.pbrick-call')) return; // let QRZ links work
-                    li.classList.toggle('pnode-collapsed');
-                });
-            }
-            return li;
-        }
-
-        const stage = document.getElementById('pyramidStage');
-        const ptree = document.createElement('ul');
-        ptree.className = 'ptree';
-        const apexLi = document.createElement('li');
-        apexLi.className = 'pnode pnode-apex';
-        apexLi.innerHTML =
-            '<div class="capstone">' + EYE_SVG +
-                '<div class="capstone-label">BKG</div>' +
-                '<div class="capstone-sub">THE ALL-SEEIN’ GANG</div>' +
-            '</div>';
-        const apexUl = document.createElement('ul');
-        roots.forEach(r => apexUl.appendChild(pBrick(r)));
-        apexLi.appendChild(apexUl);
-        ptree.appendChild(apexLi);
-        stage.appendChild(ptree);
-
-        // ---- View toggle ----
-        const toggle = document.getElementById('viewToggle');
-        const pView = document.getElementById('pyramidView');
-        toggle.style.display = 'flex';
-        toggle.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                toggle.querySelectorAll('.view-btn').forEach(b => b.classList.remove('is-active'));
-                btn.classList.add('is-active');
-                const v = btn.dataset.view;
-                pView.style.display = v === 'pyramid' ? 'block' : 'none';
-                rootEl.style.display = v === 'list' ? 'block' : 'none';
-                if (v === 'pyramid') centerPyramid();
+        // ---- Expand / collapse all ----
+        toolbarEl.style.display = 'flex';
+        function setAll(collapsed) {
+            rootEl.querySelectorAll('.tree-node').forEach(li => {
+                const btn = li.querySelector(':scope > .node-card > .node-toggle');
+                if (!btn || btn.classList.contains('leaf')) return;
+                li.classList.toggle('node-collapsed', collapsed);
+                btn.setAttribute('aria-expanded', String(!collapsed));
             });
-        });
-        // Pyramid is the default view.
-        pView.style.display = 'block';
-        rootEl.style.display = 'none';
-
-        // ---- Center + drag-to-pan the pyramid ----
-        const scroll = document.getElementById('pyramidScroll');
-        function centerPyramid() {
-            scroll.scrollLeft = (scroll.scrollWidth - scroll.clientWidth) / 2;
         }
-        requestAnimationFrame(centerPyramid);
-        window.addEventListener('load', centerPyramid);
-        setTimeout(centerPyramid, 150); // after webfonts settle layout
-        window.addEventListener('resize', centerPyramid);
-
-        let dragging = false, startX = 0, startScroll = 0;
-        scroll.addEventListener('pointerdown', e => {
-            if (e.target.closest('a')) return;
-            dragging = true; startX = e.clientX; startScroll = scroll.scrollLeft;
-            scroll.classList.add('is-grabbing');
-        });
-        window.addEventListener('pointermove', e => {
-            if (!dragging) return;
-            scroll.scrollLeft = startScroll - (e.clientX - startX);
-        });
-        window.addEventListener('pointerup', () => {
-            dragging = false; scroll.classList.remove('is-grabbing');
-        });
-
-        // ---- Zoom (buttons + ⌘/Ctrl-wheel + trackpad pinch) ----
-        const ZMIN = 0.1, ZMAX = 1.8;
-        let zoom = 1;
-        const zoomLevelEl = document.getElementById('zoomLevel');
-        function setZoom(z, anchorClientX) {
-            z = Math.min(ZMAX, Math.max(ZMIN, z));
-            const rect = scroll.getBoundingClientRect();
-            const cx = anchorClientX == null ? rect.width / 2 : anchorClientX - rect.left;
-            const contentX = (scroll.scrollLeft + cx) / zoom; // logical x under the anchor
-            zoom = z;
-            stage.style.zoom = z;
-            scroll.scrollLeft = contentX * z - cx;             // keep that point fixed
-            zoomLevelEl.textContent = Math.round(z * 100) + '%';
-        }
-        document.getElementById('zoomIn').addEventListener('click', () => setZoom(zoom * 1.2));
-        document.getElementById('zoomOut').addEventListener('click', () => setZoom(zoom / 1.2));
-        document.getElementById('zoomFit').addEventListener('click', () => {
-            const natural = stage.scrollWidth / zoom;          // unscaled content width
-            setZoom((scroll.clientWidth - 24) / natural);
-            requestAnimationFrame(centerPyramid);
-        });
-        // Trackpad pinch fires wheel events with ctrlKey set; ⌘/Ctrl-wheel too.
-        scroll.addEventListener('wheel', e => {
-            if (!(e.ctrlKey || e.metaKey)) return;             // plain wheel just pans
-            e.preventDefault();
-            setZoom(zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12), e.clientX);
-        }, { passive: false });
+        document.getElementById('expandAll').addEventListener('click', () => setAll(false));
+        document.getElementById('collapseAll').addEventListener('click', () => setAll(true));
     })();
     </script>
 </body>

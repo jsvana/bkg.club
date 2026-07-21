@@ -3,7 +3,9 @@
 This adds two pages to bkg.club:
 
 - **`tree.html`** — an interactive "downline" family tree showing who recruited
-  who into the gang (MLM-pyramid style), with a top-recruiters leaderboard.
+  who into the gang: an indented, collapsible tree (mobile + desktop friendly)
+  where each member shows their **direct** and **indirect** induction counts,
+  plus a top-recruiters leaderboard.
 - **`recruit.html`** — a form where a sponsoring member submits a new recruit's
   info. Submissions land in a Google Sheet for officers to review.
 
