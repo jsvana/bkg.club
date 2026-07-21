@@ -63,8 +63,53 @@ def parse_member_number(raw: str) -> int:
     return int(match.group(0)) if match else 0
 
 
+def _norm_header(name: str) -> str:
+    """Lowercase a header and collapse punctuation/whitespace to single spaces."""
+    return re.sub(r"[^a-z0-9]+", " ", (name or "").lower()).strip()
+
+
+# Header names (normalized) that mean "who recruited this member". The roster
+# sheet's column is expected to be "Sponsor"; these aliases keep the build
+# working if it's titled differently.
+SPONSOR_HEADER_ALIASES = {
+    "sponsor", "sponsored by", "sponsor callsign", "sponsor call",
+    "recruiter", "recruited by", "referred by", "brought in by",
+    "elmer", "upline",
+}
+
+
+def find_sponsor_header(fieldnames: list[str] | None) -> str | None:
+    """Pick the sponsor column from the CSV headers, tolerant of naming/case.
+
+    Matches a known alias first, then any header mentioning sponsor/recruit/
+    upline/elmer. Returns the original header string, or None if absent.
+    """
+    headers = [h for h in (fieldnames or []) if h]
+    norm_to_orig = {_norm_header(h): h for h in headers}
+    for alias in SPONSOR_HEADER_ALIASES:
+        if alias in norm_to_orig:
+            return norm_to_orig[alias]
+    for h in headers:
+        n = _norm_header(h)
+        if any(kw in n for kw in ("sponsor", "recruit", "upline", "elmer")):
+            return h
+    return None
+
+
 def parse_members(csv_text: str) -> list[dict]:
     reader = csv.DictReader(io.StringIO(csv_text))
+    fieldnames = reader.fieldnames
+    sponsor_key = find_sponsor_header(fieldnames)
+    # Surface the sheet schema so a missing/renamed sponsor column (or the CSV
+    # export hitting the wrong tab) is obvious in the build log.
+    print(f"  CSV columns: {fieldnames}", file=sys.stderr)
+    print(f"  Sponsor column detected as: {sponsor_key!r}", file=sys.stderr)
+    if sponsor_key is None:
+        print(
+            "  WARNING: no sponsor column found — the downline tree will be flat. "
+            "Expected a 'Sponsor' column on the exported sheet tab.",
+            file=sys.stderr,
+        )
     members = []
     for row in reader:
         callsign = (row.get("Callsign") or "").strip()
@@ -73,7 +118,7 @@ def parse_members(csv_text: str) -> list[dict]:
         number = parse_member_number(row.get("#") or row.get("BKG #") or "")
         # "Sponsor" = who recruited this member, as a callsign or BKG number.
         # Resolved to a sponsor callsign later in resolve_sponsors().
-        sponsor_raw = (row.get("Sponsor") or row.get("Sponsored By") or "").strip()
+        sponsor_raw = ((row.get(sponsor_key) if sponsor_key else "") or "").strip()
         if callsign and number:
             members.append(
                 {
