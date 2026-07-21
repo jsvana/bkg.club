@@ -542,60 +542,6 @@ US_STATE_NAMES = {
     "WI": "Wisconsin", "WY": "Wyoming",
 }
 
-# QRZ DXCC country names (normalized) that mean "United States". US ops are
-# grouped by state in the leaderboard; everyone else by country.
-US_COUNTRY_NAMES = {"united states", "united states of america", "usa", "us"}
-
-
-def member_location(member: dict) -> tuple[str, str] | None:
-    """Return ('state'|'country', label) for the leaderboard, or None to skip.
-
-    US members are ranked by their state; non-US members by their country. A US
-    op whose state didn't resolve is skipped (there's nothing to rank them by).
-    When QRZ returned no country at all, a resolved state implies a US op.
-    """
-    country = (member.get("country") or "").strip()
-    state = member.get("state")
-    is_us = country.lower() in US_COUNTRY_NAMES or (not country and state)
-    if is_us:
-        if state:
-            return ("state", US_STATE_NAMES.get(state, state))
-        return None
-    if country:
-        return ("country", country)
-    return None
-
-
-def render_leaderboard_data(members: list[dict]) -> str:
-    """Build the JSON leaderboard: the top three locations by headcount.
-
-    Locations are US states (for US ops) or countries (otherwise). Ranking is
-    dense over distinct counts, so ties share a rank and every tied location is
-    included; only the top three distinct counts (ranks 1–3) are emitted.
-    Consumed by the leaderboard in index.html (#bkg-leaderboard-data).
-    """
-    counts: dict[str, int] = {}
-    kinds: dict[str, str] = {}
-    for member in members:
-        loc = member_location(member)
-        if not loc:
-            continue
-        kind, label = loc
-        counts[label] = counts.get(label, 0) + 1
-        kinds[label] = kind
-    if not counts:
-        return "[]"
-    distinct = sorted(set(counts.values()), reverse=True)
-    rank_of = {count: idx + 1 for idx, count in enumerate(distinct[:3])}
-    entries = [
-        {"rank": rank_of[count], "label": label, "count": count, "kind": kinds[label]}
-        for label, count in counts.items()
-        if count in rank_of
-    ]
-    entries.sort(key=lambda e: (e["rank"], e["label"]))
-    return json.dumps(entries, separators=(",", ":"))
-
-
 def replace_between(html: str, start_marker: str, end_marker: str, replacement: str) -> str:
     pattern = re.compile(
         re.escape(start_marker) + r".*?" + re.escape(end_marker),
@@ -636,12 +582,6 @@ def update_index(members: list[dict]) -> None:
         "<!-- MAP_DATA:START -->",
         "<!-- MAP_DATA:END -->",
         render_map_data(members),
-    )
-    html = replace_between(
-        html,
-        "<!-- LEADERBOARD_DATA:START -->",
-        "<!-- LEADERBOARD_DATA:END -->",
-        render_leaderboard_data(members),
     )
     INDEX_PATH.write_text(html)
 

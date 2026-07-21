@@ -1634,7 +1634,7 @@
             border: 4px ridge var(--brass-light);
             box-shadow: 0 0 25px rgba(212, 175, 55, 0.3);
             padding: 16px;
-            margin-top: 28px;
+            margin-top: 52px;
             max-width: 620px;
             margin-left: auto;
             margin-right: auto;
@@ -1681,91 +1681,6 @@
             .map-wrapper {
                 grid-template-columns: 1fr;
             }
-        }
-
-        /* ===== Territory Leaderboard ===== */
-        .leaderboard-section {
-            margin: 40px 0;
-        }
-
-        .leaderboard {
-            max-width: 640px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .leaderboard-empty {
-            text-align: center;
-            color: #aaa;
-            font-family: 'Comic Sans MS', cursive;
-            font-size: 0.9rem;
-        }
-
-        .lb-row {
-            display: grid;
-            grid-template-columns: auto auto 1fr auto;
-            align-items: center;
-            gap: 12px;
-            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
-            border: 4px ridge var(--brass);
-            padding: 10px 16px;
-        }
-
-        .lb-row.lb-rank-1 {
-            border-color: var(--brass-light);
-            box-shadow: 0 0 14px rgba(255, 215, 0, 0.4);
-        }
-
-        .lb-medal {
-            font-size: 2rem;
-            line-height: 1;
-        }
-
-        .lb-place {
-            font-family: 'Bangers', cursive;
-            font-size: 1.6rem;
-            color: var(--brass);
-            letter-spacing: 1px;
-        }
-
-        .lb-label {
-            font-family: 'Bangers', cursive;
-            font-size: 1.5rem;
-            color: var(--brass-light);
-            text-shadow: 2px 2px 0 var(--blood-red), -1px -1px 0 #000;
-            letter-spacing: 1px;
-        }
-
-        .lb-tie {
-            font-family: 'Bangers', cursive;
-            font-size: 0.75rem;
-            color: #000;
-            background: var(--hot-pink);
-            border: 1px solid var(--brass-light);
-            padding: 1px 6px;
-            margin-left: 8px;
-            vertical-align: middle;
-            letter-spacing: 1px;
-        }
-
-        .lb-count {
-            font-family: 'Bangers', cursive;
-            font-size: 1.3rem;
-            color: var(--lime);
-            white-space: nowrap;
-        }
-
-        @media (max-width: 480px) {
-            .lb-row {
-                gap: 8px;
-                padding: 8px 10px;
-            }
-            .lb-medal { font-size: 1.5rem; }
-            .lb-place { font-size: 1.2rem; }
-            .lb-label { font-size: 1.15rem; }
-            .lb-count { font-size: 1rem; }
         }
 
     </style>
@@ -2567,16 +2482,6 @@
             </div>
             <script id="bkg-map-data" type="application/json"><!-- MAP_DATA:START -->{}<!-- MAP_DATA:END --></script>
         </section>
-
-        <!-- Territory Leaderboard -->
-        <section class="leaderboard-section" id="leaderboard">
-            <h2 class="section-title">TOP TERRITORIES</h2>
-            <div class="map-subtitle">Where the gang's stackin' the most brass 🤜 top 3 on the leaderboard!!</div>
-            <div class="leaderboard" id="bkgLeaderboard">
-                <div class="leaderboard-empty">Standby… territory standings comin' in on the next sked!! 📡</div>
-            </div>
-            <script id="bkg-leaderboard-data" type="application/json"><!-- LEADERBOARD_DATA:START -->[]<!-- LEADERBOARD_DATA:END --></script>
-        </section>
     </main>
 
     <!-- Footer -->
@@ -2803,47 +2708,6 @@
                     });
                 });
             }
-        })();
-
-        // ===== Territory Leaderboard =====
-        (function () {
-            const dataEl = document.getElementById('bkg-leaderboard-data');
-            const mount = document.getElementById('bkgLeaderboard');
-            if (!dataEl || !mount) return;
-
-            let entries = [];
-            try {
-                // Strip the build markers (HTML comments) before parsing JSON.
-                const raw = dataEl.textContent.replace(/<!--[\s\S]*?-->/g, '').trim();
-                entries = JSON.parse(raw || '[]');
-            } catch (e) {
-                entries = [];
-            }
-            if (!Array.isArray(entries) || !entries.length) return; // keep standby msg
-
-            const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
-
-            function escapeHtml(s) {
-                return String(s).replace(/[&<>"]/g, c => (
-                    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
-                ));
-            }
-
-            // Count how many locations share each rank so ties can be flagged.
-            const perRank = {};
-            entries.forEach(e => { perRank[e.rank] = (perRank[e.rank] || 0) + 1; });
-
-            const rows = entries.map(e => {
-                const tie = perRank[e.rank] > 1 ? '<span class="lb-tie">TIE</span>' : '';
-                const ops = e.count === 1 ? ' op' : ' ops';
-                return '<div class="lb-row lb-rank-' + e.rank + '">' +
-                    '<span class="lb-medal">' + (MEDALS[e.rank] || '🏅') + '</span>' +
-                    '<span class="lb-place">#' + e.rank + '</span>' +
-                    '<span class="lb-label">' + escapeHtml(e.label) + tie + '</span>' +
-                    '<span class="lb-count">' + e.count + ops + '</span>' +
-                    '</div>';
-            }).join('');
-            mount.innerHTML = rows;
         })();
     </script>
 </body>
