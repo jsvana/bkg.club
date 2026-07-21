@@ -173,13 +173,15 @@ def qrz_login(username: str, password: str) -> str | None:
 
 
 def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) -> dict:
-    """Look up a callsign. Returns {'current_call': str|None, 'state': str|None, 'image': str|None}.
+    """Look up a callsign. Returns {'current_call', 'state', 'country', 'image'}.
 
     'current_call' is QRZ's canonical <call> element, which differs from the
     queried callsign for retired/aliased/vanity calls; callers use it to remap
-    roster entries to the operator's current callsign.
+    roster entries to the operator's current callsign. 'state' is a two-letter
+    US state code (US ops only); 'country' is QRZ's DXCC country name, used to
+    group non-US ops by country in the territory leaderboard.
     """
-    empty = {"current_call": None, "state": None, "image": None}
+    empty = {"current_call": None, "state": None, "country": None, "image": None}
     raw = _qrz_get_raw({"s": session_key, "callsign": callsign})
     if raw is None:
         return empty
@@ -219,6 +221,11 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
         if re.fullmatch(r"[A-Z]{2}", text):
             state = text
 
+    country = None
+    country_elem = call.find("q:country", QRZ_NS)
+    if country_elem is not None and country_elem.text:
+        country = country_elem.text.strip()
+
     image = None
     image_elem = call.find("q:image", QRZ_NS)
     if image_elem is not None and image_elem.text:
@@ -226,7 +233,7 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
         if candidate.startswith(("http://", "https://")):
             image = candidate
 
-    return {"current_call": current_call, "state": state, "image": image}
+    return {"current_call": current_call, "state": state, "country": country, "image": image}
 
 
 def local_override_mugshot(callsign: str) -> str | None:
@@ -274,6 +281,7 @@ def annotate_qrz(members: list[dict]) -> None:
     """
     for member in members:
         member["state"] = None
+        member["country"] = None
         member["state_og"] = False
         member["mugshot_path"] = None
 
@@ -298,6 +306,7 @@ def annotate_qrz(members: list[dict]) -> None:
             )
             member["callsign"] = current_call
         member["state"] = info["state"]
+        member["country"] = info["country"]
         override = local_override_mugshot(member["callsign"])
         if override:
             member["mugshot_path"] = override
@@ -517,6 +526,76 @@ def render_map_data(members: list[dict]) -> str:
     return json.dumps(ordered, separators=(",", ":"))
 
 
+US_STATE_NAMES = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+    "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
+    "DC": "District of Columbia", "FL": "Florida", "GA": "Georgia", "HI": "Hawaii",
+    "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas",
+    "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi",
+    "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada",
+    "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
+    "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma",
+    "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+    "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah",
+    "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
+    "WI": "Wisconsin", "WY": "Wyoming",
+}
+
+# QRZ DXCC country names (normalized) that mean "United States". US ops are
+# grouped by state in the leaderboard; everyone else by country.
+US_COUNTRY_NAMES = {"united states", "united states of america", "usa", "us"}
+
+
+def member_location(member: dict) -> tuple[str, str] | None:
+    """Return ('state'|'country', label) for the leaderboard, or None to skip.
+
+    US members are ranked by their state; non-US members by their country. A US
+    op whose state didn't resolve is skipped (there's nothing to rank them by).
+    When QRZ returned no country at all, a resolved state implies a US op.
+    """
+    country = (member.get("country") or "").strip()
+    state = member.get("state")
+    is_us = country.lower() in US_COUNTRY_NAMES or (not country and state)
+    if is_us:
+        if state:
+            return ("state", US_STATE_NAMES.get(state, state))
+        return None
+    if country:
+        return ("country", country)
+    return None
+
+
+def render_leaderboard_data(members: list[dict]) -> str:
+    """Build the JSON leaderboard: the top three locations by headcount.
+
+    Locations are US states (for US ops) or countries (otherwise). Ranking is
+    dense over distinct counts, so ties share a rank and every tied location is
+    included; only the top three distinct counts (ranks 1–3) are emitted.
+    Consumed by the leaderboard in index.html (#bkg-leaderboard-data).
+    """
+    counts: dict[str, int] = {}
+    kinds: dict[str, str] = {}
+    for member in members:
+        loc = member_location(member)
+        if not loc:
+            continue
+        kind, label = loc
+        counts[label] = counts.get(label, 0) + 1
+        kinds[label] = kind
+    if not counts:
+        return "[]"
+    distinct = sorted(set(counts.values()), reverse=True)
+    rank_of = {count: idx + 1 for idx, count in enumerate(distinct[:3])}
+    entries = [
+        {"rank": rank_of[count], "label": label, "count": count, "kind": kinds[label]}
+        for label, count in counts.items()
+        if count in rank_of
+    ]
+    entries.sort(key=lambda e: (e["rank"], e["label"]))
+    return json.dumps(entries, separators=(",", ":"))
+
+
 def replace_between(html: str, start_marker: str, end_marker: str, replacement: str) -> str:
     pattern = re.compile(
         re.escape(start_marker) + r".*?" + re.escape(end_marker),
@@ -557,6 +636,12 @@ def update_index(members: list[dict]) -> None:
         "<!-- MAP_DATA:START -->",
         "<!-- MAP_DATA:END -->",
         render_map_data(members),
+    )
+    html = replace_between(
+        html,
+        "<!-- LEADERBOARD_DATA:START -->",
+        "<!-- LEADERBOARD_DATA:END -->",
+        render_leaderboard_data(members),
     )
     INDEX_PATH.write_text(html)
 
