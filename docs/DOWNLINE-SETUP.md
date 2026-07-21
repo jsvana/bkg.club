@@ -20,7 +20,13 @@ The tree is built from **one new column** in the existing roster Google Sheet
 (the same sheet that already has `Callsign, Name, Join Date, #, QTH`).
 
 1. Open the roster sheet.
-2. Add a column named exactly **`Sponsor`** (`Sponsored By` also works).
+2. Add a column for **who recruited each member**. The build auto-detects the
+   column by name (case-insensitive), so any of these work: `Sponsor`,
+   `Sponsored By`, `Recruited By`, `Recruiter`, `Referred By`, `Upline`,
+   `Elmer` — or any header containing "sponsor"/"recruit". The current sheet
+   uses **`Recruited By`**. The build log prints the detected column
+   (`Sponsor column detected as: ...`); if it says `None`, the header didn't
+   match and the tree will be flat.
 3. For each member, put **who recruited them** — either that sponsor's
    **callsign** (e.g. `KI7QCF`) or their **BKG number** (e.g. `1`, `BKG1`,
    or `BKG #1`). Both are accepted.
