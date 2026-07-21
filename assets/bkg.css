@@ -235,8 +235,15 @@ body {
     color: var(--brass-light);
     text-shadow: 2px 2px 0 var(--blood-red);
     text-align: center;
+    margin-bottom: 4px;
+}
+.kingpins-crosslink {
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
     margin-bottom: 12px;
 }
+.kingpins-crosslink a { color: var(--brass-light); }
 .kingpin-row {
     display: flex;
     align-items: center;

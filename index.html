@@ -1628,6 +1628,55 @@
         .map-swatch.tier-3 { background: var(--brass-light); }
         .map-swatch.tier-4 { background: var(--lime); }
 
+        /* Top States leaderboard — matches the downline "kingpins" board */
+        .leaderboard {
+            background: linear-gradient(135deg, #2a1a00 0%, #0a0500 100%);
+            border: 4px ridge var(--brass-light);
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.3);
+            padding: 16px;
+            margin-top: 28px;
+            max-width: 620px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .leaderboard-title {
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            color: var(--brass-light);
+            text-shadow: 2px 2px 0 var(--blood-red);
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .leaderboard-crosslink {
+            text-align: center;
+            font-family: 'Special Elite', monospace;
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+        }
+        .leaderboard-crosslink a { color: var(--brass-light); }
+        .leader-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 8px;
+            border-bottom: 1px dashed rgba(212, 175, 55, 0.3);
+            cursor: pointer;
+        }
+        .leader-row:last-child { border-bottom: none; }
+        .leader-row:hover { background: rgba(212, 175, 55, 0.08); }
+        .leader-rank { font-family: 'Bangers', cursive; font-size: 1.3rem; color: var(--brass); width: 44px; }
+        .leader-abbr { font-family: 'Bangers', cursive; font-size: 1.2rem; color: var(--brass-light); }
+        .leader-name { font-family: 'Comic Sans MS', cursive; font-size: 0.8rem; color: #888; flex: 1; }
+        .leader-count {
+            font-family: 'Special Elite', monospace;
+            font-size: 0.8rem;
+            color: #000;
+            background: var(--lime);
+            padding: 2px 10px;
+            border: 2px solid #000;
+            white-space: nowrap;
+        }
+
         @media (max-width: 768px) {
             .map-wrapper {
                 grid-template-columns: 1fr;
@@ -2511,6 +2560,11 @@
                     </div>
                 </div>
             </div>
+            <div class="leaderboard" id="topStates" style="display:none;">
+                <div class="leaderboard-title">🏆 TOP STATES — THE TERRITORY 🏆</div>
+                <div class="leaderboard-crosslink"><a href="tree.html">⟶ See the TOP RECRUITERS in the downline</a></div>
+                <div id="topStatesList"></div>
+            </div>
             <script id="bkg-map-data" type="application/json"><!-- MAP_DATA:START -->{}<!-- MAP_DATA:END --></script>
         </section>
 
@@ -2717,6 +2771,38 @@
                     if (activeEl) renderState(activeEl.dataset.abbr);
                 });
             });
+
+            // ===== Top States leaderboard =====
+            // Ranked by op count; ties broken by earliest BKG member (OG rewards).
+            const minNum = abbr => Math.min.apply(null,
+                (byState[abbr] || []).map(m => m.num || Infinity));
+            const topStates = occupiedStates
+                .slice()
+                .sort((a, b) => byState[b].length - byState[a].length || minNum(a) - minNum(b))
+                .slice(0, 10);
+            if (topStates.length) {
+                const medals = ['🥇', '🥈', '🥉', '4.', '5.', '6.', '7.', '8.', '9.', '10.'];
+                document.getElementById('topStates').style.display = 'block';
+                document.getElementById('topStatesList').innerHTML = topStates.map((abbr, i) => {
+                    const n = byState[abbr].length;
+                    return '<div class="leader-row" data-abbr="' + abbr + '">' +
+                        '<span class="leader-rank">' + medals[i] + '</span>' +
+                        '<span class="leader-abbr">' + abbr + '</span>' +
+                        '<span class="leader-name">' + escapeHtml(STATE_NAMES[abbr] || abbr) + '</span>' +
+                        '<span class="leader-count">' + n + (n === 1 ? ' op' : ' ops') + '</span>' +
+                        '</div>';
+                }).join('');
+                // Clicking a row highlights the state on the map above.
+                document.querySelectorAll('#topStatesList .leader-row').forEach(row => {
+                    row.addEventListener('click', () => {
+                        const abbr = row.dataset.abbr;
+                        const el = document.getElementById('state-' + abbr);
+                        if (!el) return;
+                        activate(el, abbr);
+                        document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                });
+            }
         })();
 
         // ===== Territory Leaderboard =====

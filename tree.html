@@ -52,6 +52,7 @@
 
         <div class="kingpins" id="kingpins" style="display:none;">
             <div class="kingpins-title">👑 TOP RECRUITERS — THE KINGPINS 👑</div>
+            <div class="kingpins-crosslink"><a href="index.html#map">⟶ See the TOP STATES on the territory map</a></div>
             <div id="kingpinsList"></div>
         </div>
 
@@ -164,13 +165,13 @@
             '</div><div class="tree-stat-label">' + s.label + '</div></div>'
         ).join('');
 
-        // ---- Kingpins: ranked by direct recruits (tie-break: bigger total downline) ----
+        // ---- Kingpins: ranked by total downline, direct recruits as tiebreak ----
         const kingpins = members
             .filter(m => m.direct)
-            .sort((a, b) => b.direct - a.direct || b.downline - a.downline || a.num - b.num)
-            .slice(0, 5);
+            .sort((a, b) => b.downline - a.downline || b.direct - a.direct || a.num - b.num)
+            .slice(0, 10);
         if (kingpins.length) {
-            const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
+            const medals = ['🥇', '🥈', '🥉', '4.', '5.', '6.', '7.', '8.', '9.', '10.'];
             document.getElementById('kingpins').style.display = 'block';
             document.getElementById('kingpinsList').innerHTML = kingpins.map((m, i) =>
                 '<div class="kingpin-row">' +
