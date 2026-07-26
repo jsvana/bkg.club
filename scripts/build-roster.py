@@ -25,6 +25,7 @@ SHEET_CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?forma
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = REPO_ROOT / "index.html"
+TREE_PATH = REPO_ROOT / "tree.html"
 MEMBERS_TXT_PATH = REPO_ROOT / "members.txt"
 MUGSHOT_DIR = REPO_ROOT / "images" / "mugshots"
 MUGSHOT_REL_DIR = "images/mugshots"
@@ -62,14 +63,62 @@ def parse_member_number(raw: str) -> int:
     return int(match.group(0)) if match else 0
 
 
+def _norm_header(name: str) -> str:
+    """Lowercase a header and collapse punctuation/whitespace to single spaces."""
+    return re.sub(r"[^a-z0-9]+", " ", (name or "").lower()).strip()
+
+
+# Header names (normalized) that mean "who recruited this member". The roster
+# sheet's column is expected to be "Sponsor"; these aliases keep the build
+# working if it's titled differently.
+SPONSOR_HEADER_ALIASES = {
+    "sponsor", "sponsored by", "sponsor callsign", "sponsor call",
+    "recruiter", "recruited by", "referred by", "brought in by",
+    "elmer", "upline",
+}
+
+
+def find_sponsor_header(fieldnames: list[str] | None) -> str | None:
+    """Pick the sponsor column from the CSV headers, tolerant of naming/case.
+
+    Matches a known alias first, then any header mentioning sponsor/recruit/
+    upline/elmer. Returns the original header string, or None if absent.
+    """
+    headers = [h for h in (fieldnames or []) if h]
+    norm_to_orig = {_norm_header(h): h for h in headers}
+    for alias in SPONSOR_HEADER_ALIASES:
+        if alias in norm_to_orig:
+            return norm_to_orig[alias]
+    for h in headers:
+        n = _norm_header(h)
+        if any(kw in n for kw in ("sponsor", "recruit", "upline", "elmer")):
+            return h
+    return None
+
+
 def parse_members(csv_text: str) -> list[dict]:
     reader = csv.DictReader(io.StringIO(csv_text))
+    fieldnames = reader.fieldnames
+    sponsor_key = find_sponsor_header(fieldnames)
+    # Surface the sheet schema so a missing/renamed sponsor column (or the CSV
+    # export hitting the wrong tab) is obvious in the build log.
+    print(f"  CSV columns: {fieldnames}", file=sys.stderr)
+    print(f"  Sponsor column detected as: {sponsor_key!r}", file=sys.stderr)
+    if sponsor_key is None:
+        print(
+            "  WARNING: no sponsor column found — the downline tree will be flat. "
+            "Expected a 'Sponsor' column on the exported sheet tab.",
+            file=sys.stderr,
+        )
     members = []
     for row in reader:
         callsign = (row.get("Callsign") or "").strip()
         name = (row.get("Name") or "").strip()
         join_date = (row.get("Join Date") or "").strip()
         number = parse_member_number(row.get("#") or row.get("BKG #") or "")
+        # "Sponsor" = who recruited this member, as a callsign or BKG number.
+        # Resolved to a sponsor callsign later in resolve_sponsors().
+        sponsor_raw = ((row.get(sponsor_key) if sponsor_key else "") or "").strip()
         if callsign and number:
             members.append(
                 {
@@ -77,6 +126,8 @@ def parse_members(csv_text: str) -> list[dict]:
                     "name": name,
                     "join_date": join_date,
                     "number": number,
+                    "sponsor_raw": sponsor_raw,
+                    "sponsor_call": None,
                 }
             )
     members.sort(key=lambda m: m["number"])
@@ -122,8 +173,15 @@ def qrz_login(username: str, password: str) -> str | None:
 
 
 def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) -> dict:
-    """Look up a callsign. Returns {'state': str|None, 'image': str|None}."""
-    empty = {"state": None, "image": None}
+    """Look up a callsign. Returns {'current_call', 'state', 'country', 'image'}.
+
+    'current_call' is QRZ's canonical <call> element, which differs from the
+    queried callsign for retired/aliased/vanity calls; callers use it to remap
+    roster entries to the operator's current callsign. 'state' is a two-letter
+    US state code (US ops only); 'country' is QRZ's DXCC country name, used to
+    group non-US ops by country in the territory leaderboard.
+    """
+    empty = {"current_call": None, "state": None, "country": None, "image": None}
     raw = _qrz_get_raw({"s": session_key, "callsign": callsign})
     if raw is None:
         return empty
@@ -146,12 +204,27 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
     if call is None:
         return empty
 
+    # QRZ returns the operator's canonical <call>, which may differ from the
+    # queried callsign for retired/aliased/vanity calls. Use it as the
+    # authoritative current callsign.
+    current_call = None
+    call_elem = call.find("q:call", QRZ_NS)
+    if call_elem is not None and call_elem.text:
+        candidate = call_elem.text.strip().upper()
+        if re.fullmatch(r"[A-Z0-9/]+", candidate):
+            current_call = candidate
+
     state = None
     state_elem = call.find("q:state", QRZ_NS)
     if state_elem is not None and state_elem.text:
         text = state_elem.text.strip().upper()
         if re.fullmatch(r"[A-Z]{2}", text):
             state = text
+
+    country = None
+    country_elem = call.find("q:country", QRZ_NS)
+    if country_elem is not None and country_elem.text:
+        country = country_elem.text.strip()
 
     image = None
     image_elem = call.find("q:image", QRZ_NS)
@@ -160,7 +233,7 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
         if candidate.startswith(("http://", "https://")):
             image = candidate
 
-    return {"state": state, "image": image}
+    return {"current_call": current_call, "state": state, "country": country, "image": image}
 
 
 def local_override_mugshot(callsign: str) -> str | None:
@@ -208,6 +281,7 @@ def annotate_qrz(members: list[dict]) -> None:
     """
     for member in members:
         member["state"] = None
+        member["country"] = None
         member["state_og"] = False
         member["mugshot_path"] = None
 
@@ -222,7 +296,17 @@ def annotate_qrz(members: list[dict]) -> None:
 
     for idx, member in enumerate(members):
         info = qrz_fetch_callsign(session_key, member["callsign"], debug=(idx == 0))
+        # Remap to the operator's current callsign if QRZ reports a different
+        # canonical <call> (e.g. after a vanity/retired-call change).
+        current_call = info.get("current_call")
+        if current_call and current_call != member["callsign"].upper():
+            print(
+                f"  Callsign updated: {member['callsign']} -> {current_call}",
+                file=sys.stderr,
+            )
+            member["callsign"] = current_call
         member["state"] = info["state"]
+        member["country"] = info["country"]
         override = local_override_mugshot(member["callsign"])
         if override:
             member["mugshot_path"] = override
@@ -371,6 +455,53 @@ def render_roster_block(members: list[dict]) -> str:
     return "\n\n".join(cards)
 
 
+def resolve_sponsors(members: list[dict]) -> None:
+    """Resolve each member's raw "Sponsor" value to a sponsor callsign in place.
+
+    A sponsor may be recorded as a callsign ("KI7QCF") or a BKG number ("12",
+    "BKG12", "BKG #12"). Sets member['sponsor_call'] to the matched member's
+    callsign, or None for a root / unrecognized sponsor.
+    """
+    by_call = {m["callsign"].upper(): m for m in members}
+    by_num = {m["number"]: m for m in members}
+    for member in members:
+        raw = (member.get("sponsor_raw") or "").strip()
+        if not raw:
+            continue
+        # Prefer an exact callsign match before parsing a number, so a callsign
+        # like "K5OHY" isn't mistaken for member number 5.
+        sponsor = by_call.get(raw.upper())
+        if sponsor is None:
+            num = parse_member_number(raw)
+            sponsor = by_num.get(num) if num else None
+        if sponsor is None:
+            print(f"  Unrecognized sponsor for {member['callsign']}: {raw!r}", file=sys.stderr)
+        elif sponsor is member:
+            print(f"  Ignoring self-sponsor for {member['callsign']}", file=sys.stderr)
+        else:
+            member["sponsor_call"] = sponsor["callsign"]
+    resolved = sum(1 for m in members if m.get("sponsor_call"))
+    print(f"  Resolved sponsor for {resolved}/{len(members)} members", file=sys.stderr)
+
+
+def render_downline_data(members: list[dict]) -> str:
+    """Build the JSON downline data: flat list of {call, name, num, sponsor}.
+
+    'sponsor' is the sponsoring member's callsign or null (a root). The tree
+    in tree.html (#bkg-downline-data) assembles the forest client-side.
+    """
+    nodes = [
+        {
+            "call": m["callsign"],
+            "name": m["name"],
+            "num": m["number"],
+            "sponsor": m.get("sponsor_call"),
+        }
+        for m in sorted(members, key=lambda m: m["number"])
+    ]
+    return json.dumps(nodes, separators=(",", ":"))
+
+
 def render_map_data(members: list[dict]) -> str:
     """Build the JSON map data: {state_abbr: [{"call", "name", "num"}, ...]}.
 
@@ -394,6 +525,22 @@ def render_map_data(members: list[dict]) -> str:
     ordered = {state: by_state[state] for state in sorted(by_state)}
     return json.dumps(ordered, separators=(",", ":"))
 
+
+US_STATE_NAMES = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+    "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
+    "DC": "District of Columbia", "FL": "Florida", "GA": "Georgia", "HI": "Hawaii",
+    "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas",
+    "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi",
+    "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada",
+    "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
+    "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma",
+    "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+    "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah",
+    "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
+    "WI": "Wisconsin", "WY": "Wyoming",
+}
 
 def replace_between(html: str, start_marker: str, end_marker: str, replacement: str) -> str:
     pattern = re.compile(
@@ -439,6 +586,21 @@ def update_index(members: list[dict]) -> None:
     INDEX_PATH.write_text(html)
 
 
+def update_tree(members: list[dict]) -> None:
+    """Inject the downline JSON into tree.html. No-op if tree.html is absent."""
+    if not TREE_PATH.is_file():
+        print(f"  {TREE_PATH.name} not found, skipping downline build", file=sys.stderr)
+        return
+    html = TREE_PATH.read_text()
+    html = replace_between(
+        html,
+        "<!-- DOWNLINE_DATA:START -->",
+        "<!-- DOWNLINE_DATA:END -->",
+        render_downline_data(members),
+    )
+    TREE_PATH.write_text(html)
+
+
 def render_members_txt(members: list[dict]) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     lines = [
@@ -468,6 +630,9 @@ def main() -> int:
         return 1
     print(f"Parsed {len(members)} members (BKG #{members[0]['number']:03d}–#{members[-1]['number']:03d})")
 
+    print("Resolving sponsors for the downline tree")
+    resolve_sponsors(members)
+
     print("Looking up state + mugshot for each member via QRZ XML API")
     annotate_qrz(members)
     og_count = sum(1 for m in members if m.get("state_og"))
@@ -475,6 +640,9 @@ def main() -> int:
 
     update_index(members)
     print(f"Updated {INDEX_PATH.name}")
+
+    update_tree(members)
+    print(f"Updated {TREE_PATH.name}")
 
     MEMBERS_TXT_PATH.write_text(render_members_txt(members))
     print(f"Wrote {MEMBERS_TXT_PATH.name}")
