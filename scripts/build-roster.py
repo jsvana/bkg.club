@@ -27,6 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = REPO_ROOT / "index.html"
 TREE_PATH = REPO_ROOT / "tree.html"
 MEMBERS_TXT_PATH = REPO_ROOT / "members.txt"
+NAME_OVERRIDES_PATH = REPO_ROOT / "name-overrides.txt"
 MUGSHOT_DIR = REPO_ROOT / "images" / "mugshots"
 MUGSHOT_REL_DIR = "images/mugshots"
 MUGSHOT_OVERRIDE_DIR = REPO_ROOT / "images" / "mugshots-override"
@@ -132,6 +133,70 @@ def parse_members(csv_text: str) -> list[dict]:
             )
     members.sort(key=lambda m: m["number"])
     return members
+
+
+def load_name_overrides() -> dict[str, str]:
+    """Load callsign -> display-name overrides from name-overrides.txt.
+
+    This file is manually maintained (unlike members.txt) and lets anyone
+    override the name a member is shown with — the roster sheet stays the
+    source of truth, but the override wins. It's the text-name analogue of the
+    images/mugshots-override/ directory. Format, one entry per line:
+
+        CALLSIGN = Display Name
+
+    Blank lines and lines starting with '#' are ignored. The separator may be
+    '=' or ':'. Callsigns are matched case-insensitively. Returns a dict keyed
+    by upper-cased callsign; empty if the file is absent.
+    """
+    if not NAME_OVERRIDES_PATH.is_file():
+        return {}
+    overrides: dict[str, str] = {}
+    for lineno, raw_line in enumerate(NAME_OVERRIDES_PATH.read_text().splitlines(), 1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        match = re.match(r"([A-Za-z0-9/]+)\s*[=:]\s*(.+)$", line)
+        if not match:
+            print(
+                f"  Skipping unparseable name override ({NAME_OVERRIDES_PATH.name}:{lineno}): {raw_line!r}",
+                file=sys.stderr,
+            )
+            continue
+        callsign = match.group(1).strip().upper()
+        name = match.group(2).strip()
+        if name:
+            overrides[callsign] = name
+    return overrides
+
+
+def apply_name_overrides(members: list[dict], overrides: dict[str, str]) -> None:
+    """Replace member['name'] with a name-overrides.txt entry, in place.
+
+    Matches on the roster callsign (case-insensitive). Applied before the QRZ
+    lookup so it needs no network/credentials. Logs each applied override and
+    any override whose callsign isn't (yet) in the roster.
+    """
+    if not overrides:
+        return
+    used: set[str] = set()
+    for member in members:
+        key = member["callsign"].upper()
+        new_name = overrides.get(key)
+        if new_name and new_name != member["name"]:
+            print(
+                f"  Name override: {member['callsign']} {member['name']!r} -> {new_name!r}",
+                file=sys.stderr,
+            )
+            member["name"] = new_name
+            used.add(key)
+        elif new_name:
+            used.add(key)
+    for key in overrides.keys() - used:
+        print(
+            f"  Name override for {key} not applied (callsign not in roster)",
+            file=sys.stderr,
+        )
 
 
 def _qrz_get_raw(params: dict[str, str]) -> bytes | None:
@@ -629,6 +694,11 @@ def main() -> int:
         print("ERROR: No members parsed from CSV", file=sys.stderr)
         return 1
     print(f"Parsed {len(members)} members (BKG #{members[0]['number']:03d}–#{members[-1]['number']:03d})")
+
+    overrides = load_name_overrides()
+    if overrides:
+        print(f"Applying {len(overrides)} name override(s) from {NAME_OVERRIDES_PATH.name}")
+        apply_name_overrides(members, overrides)
 
     print("Resolving sponsors for the downline tree")
     resolve_sponsors(members)
