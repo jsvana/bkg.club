@@ -39,6 +39,64 @@ OG_BADGE_NUMBERS = {2}  # member numbers that get the "OG" badge (founder #1 has
 QRZ_XML_URL = "https://xmldata.qrz.com/xml/current/"
 QRZ_NS = {"q": "http://xmldata.qrz.com"}
 
+# The 50 states + DC drawn in the index.html SVG map.
+US_MAP_STATES = frozenset(
+    """
+    AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN
+    MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA
+    WV WI WY
+    """.split()
+)
+
+# QRZ country values (DXCC-style entity names) that belong on the US map
+# rather than in the international DX box. Compared lowercase.
+US_DXCC_NAMES = {"united states", "united states of america", "usa", "alaska", "hawaii"}
+
+# DXCC entity name (as QRZ reports it, lowercased) -> flag emoji for the DX box.
+# Anything missing falls back to the 🌍 globe.
+COUNTRY_FLAGS = {
+    "canada": "🇨🇦", "mexico": "🇲🇽", "england": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+    "wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿", "northern ireland": "🇬🇧", "ireland": "🇮🇪", "france": "🇫🇷",
+    "fed. rep. of germany": "🇩🇪", "germany": "🇩🇪", "italy": "🇮🇹", "spain": "🇪🇸",
+    "portugal": "🇵🇹", "netherlands": "🇳🇱", "belgium": "🇧🇪", "switzerland": "🇨🇭",
+    "austria": "🇦🇹", "sweden": "🇸🇪", "norway": "🇳🇴", "denmark": "🇩🇰",
+    "finland": "🇫🇮", "iceland": "🇮🇸", "poland": "🇵🇱", "czech republic": "🇨🇿",
+    "slovak republic": "🇸🇰", "hungary": "🇭🇺", "romania": "🇷🇴", "bulgaria": "🇧🇬",
+    "greece": "🇬🇷", "croatia": "🇭🇷", "slovenia": "🇸🇮", "ukraine": "🇺🇦",
+    "european russia": "🇷🇺", "asiatic russia": "🇷🇺", "estonia": "🇪🇪",
+    "latvia": "🇱🇻", "lithuania": "🇱🇹", "japan": "🇯🇵", "republic of korea": "🇰🇷",
+    "south korea": "🇰🇷", "china": "🇨🇳", "taiwan": "🇹🇼", "hong kong": "🇭🇰",
+    "philippines": "🇵🇭", "indonesia": "🇮🇩", "thailand": "🇹🇭", "vietnam": "🇻🇳",
+    "india": "🇮🇳", "israel": "🇮🇱", "turkey": "🇹🇷", "united arab emirates": "🇦🇪",
+    "south africa": "🇿🇦", "egypt": "🇪🇬", "kenya": "🇰🇪", "nigeria": "🇳🇬",
+    "morocco": "🇲🇦", "australia": "🇦🇺", "new zealand": "🇳🇿", "brazil": "🇧🇷",
+    "argentina": "🇦🇷", "chile": "🇨🇱", "colombia": "🇨🇴", "peru": "🇵🇪",
+    "uruguay": "🇺🇾", "paraguay": "🇵🇾", "bolivia": "🇧🇴", "ecuador": "🇪🇨",
+    "venezuela": "🇻🇪", "costa rica": "🇨🇷", "panama": "🇵🇦", "guatemala": "🇬🇹",
+    "honduras": "🇭🇳", "nicaragua": "🇳🇮", "el salvador": "🇸🇻", "belize": "🇧🇿",
+    "dominican republic": "🇩🇴", "cuba": "🇨🇺", "jamaica": "🇯🇲", "bahamas": "🇧🇸",
+    "trinidad & tobago": "🇹🇹", "puerto rico": "🇵🇷", "us virgin islands": "🇻🇮",
+    "guam": "🇬🇺",
+}
+
+
+def member_map_bucket(member: dict) -> tuple[str, str] | None:
+    """Where a member lands on the territory map.
+
+    Returns ("state", "UT") for members on the US map, ("dx", "Canada") for
+    international members, or None when there's nothing to plot. QRZ reports
+    Canadian provinces and other subdivisions in the same <state> field as US
+    states, so a bare two-letter code is only trusted when the country agrees.
+    """
+    state = member.get("state")
+    country = (member.get("country") or "").strip()
+    is_us = not country or country.lower() in US_DXCC_NAMES
+    if is_us and state in US_MAP_STATES:
+        return ("state", state)
+    if country and not is_us:
+        return ("dx", country)
+    return None
+
 
 def html_escape(text: str) -> str:
     return (
@@ -289,7 +347,7 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
     country = None
     country_elem = call.find("q:country", QRZ_NS)
     if country_elem is not None and country_elem.text:
-        country = country_elem.text.strip()
+        country = country_elem.text.strip() or None
 
     image = None
     image_elem = call.find("q:image", QRZ_NS)
@@ -338,8 +396,25 @@ def download_mugshot(callsign: str, url: str) -> str | None:
     return f"{MUGSHOT_REL_DIR}/{filename}"
 
 
+def mark_territory_ogs(members: list[dict]) -> None:
+    """Badge the earliest member (lowest BKG #) in each map territory, in place.
+
+    The first member in each US map state gets member['state_og'], and the
+    first from each DX country gets member['country_og'] — the international
+    counterpart of the state OG badge.
+    """
+    earliest: dict[tuple[str, str], dict] = {}
+    for member in sorted(members, key=lambda m: m["number"]):
+        bucket = member_map_bucket(member)
+        if bucket and bucket not in earliest:
+            earliest[bucket] = member
+    for (kind, _territory), member in earliest.items():
+        member["state_og" if kind == "state" else "country_og"] = True
+
+
 def annotate_qrz(members: list[dict]) -> None:
-    """Set member['state'], member['state_og'], and member['mugshot_path'] in place.
+    """Set member['state'], member['country'], member['state_og'],
+    member['country_og'], and member['mugshot_path'] in place.
 
     Requires env vars QRZ_USERNAME and QRZ_PASSWORD (an XML-subscription QRZ
     account). Raises RuntimeError if creds are missing or login fails.
@@ -348,6 +423,7 @@ def annotate_qrz(members: list[dict]) -> None:
         member["state"] = None
         member["country"] = None
         member["state_og"] = False
+        member["country_og"] = False
         member["mugshot_path"] = None
 
     username = os.environ.get("QRZ_USERNAME")
@@ -377,18 +453,16 @@ def annotate_qrz(members: list[dict]) -> None:
             member["mugshot_path"] = override
         elif info["image"]:
             member["mugshot_path"] = download_mugshot(member["callsign"], info["image"])
-    resolved = sum(1 for m in members if m.get("state"))
+    resolved = sum(1 for m in members if member_map_bucket(m))
+    dx = sum(1 for m in members if (member_map_bucket(m) or ("",))[0] == "dx")
     mugshots = sum(1 for m in members if m.get("mugshot_path"))
-    print(f"  QRZ resolved state for {resolved}/{len(members)} members", file=sys.stderr)
+    print(
+        f"  QRZ placed {resolved}/{len(members)} members on the map ({dx} international)",
+        file=sys.stderr,
+    )
     print(f"  Mugshot resolved for {mugshots}/{len(members)} members (local overrides preferred)", file=sys.stderr)
 
-    earliest: dict[str, dict] = {}
-    for member in sorted(members, key=lambda m: m["number"]):
-        state = member.get("state")
-        if state and state not in earliest:
-            earliest[state] = member
-    for member in earliest.values():
-        member["state_og"] = True
+    mark_territory_ogs(members)
 
 
 def first_name_initial(name: str) -> str:
@@ -409,11 +483,23 @@ def first_name_initial(name: str) -> str:
     return f"{first} {last_candidates[-1][0].upper()}"
 
 
-def state_og_badge_html(member: dict) -> str:
-    if not member.get("state_og"):
+def territory_og_badge_html(member: dict) -> str:
+    """Corner ribbon for the first BKG member in a US state or DX country.
+
+    State ribbons show the state code ("UT OG"); country ribbons show the
+    country's flag emoji ("🇨🇦 OG") so long DXCC names don't blow out the
+    ribbon, with the full name in the hover title.
+    """
+    if member.get("state_og"):
+        label = html_escape(member.get("state") or "")
+        title = label
+    elif member.get("country_og"):
+        country = (member.get("country") or "").strip()
+        label = COUNTRY_FLAGS.get(country.lower(), "🌍")
+        title = html_escape(country)
+    else:
         return ""
-    state = html_escape(member.get("state") or "")
-    return f'\n                    <div class="state-og-badge">{state} OG</div>'
+    return f'\n                    <div class="state-og-badge" title="{title} OG">{label} OG</div>'
 
 
 def mugshot_inner_html(member: dict) -> str:
@@ -436,10 +522,10 @@ def render_founder_card(member: dict) -> str:
     callsign = html_escape(member["callsign"])
     name = html_escape(member["name"])
     number = f"BKG #{member['number']:03d}"
-    state_og_html = state_og_badge_html(member)
+    territory_og_html = territory_og_badge_html(member)
     mugshot_inner = mugshot_inner_html(member)
     return f"""                <!-- FOUNDER - {callsign} - THE OG BRASS POUNDER -->
-                <div class="member-card founder-card">{state_og_html}
+                <div class="member-card founder-card">{territory_og_html}
                     <div class="founder-badge">👑 GODFATHER 👑</div>
                     <div class="founder-flames"></div>
                     <div class="mugshot founder-mugshot">
@@ -466,7 +552,7 @@ def render_member_card(member: dict, *, is_og: bool, is_new: bool) -> str:
         badge_html = '\n                    <div class="og-badge">OG</div>'
     elif is_new:
         badge_html = '\n                    <div class="new-badge">NEW!!</div>'
-    badge_html += state_og_badge_html(member)
+    badge_html += territory_og_badge_html(member)
     mugshot_inner = mugshot_inner_html(member)
     return f"""                <!-- {callsign} -->
                 <div class="member-card">{badge_html}
@@ -568,27 +654,41 @@ def render_downline_data(members: list[dict]) -> str:
 
 
 def render_map_data(members: list[dict]) -> str:
-    """Build the JSON map data: {state_abbr: [{"call", "name", "num"}, ...]}.
+    """Build the JSON map data consumed by the territory map (#bkg-map-data):
 
-    Only members whose QRZ state resolved to a two-letter code are included.
-    Consumed by the territory map in index.html (#bkg-map-data).
+    {"states": {state_abbr: [{"call", "name", "num"}, ...]},
+     "dx": {country: {"flag": "🇨🇦", "members": [{"call", "name", "num"}, ...]}}}
+
+    US members land in "states" (keyed by QRZ state); international members
+    land in "dx" (keyed by QRZ country) and render in the map's DX inset box.
     """
     by_state: dict[str, list[dict]] = {}
+    by_country: dict[str, list[dict]] = {}
     for member in members:
-        state = member.get("state")
-        if not state:
+        bucket = member_map_bucket(member)
+        if not bucket:
             continue
-        by_state.setdefault(state, []).append(
-            {
-                "call": member["callsign"],
-                "name": member["name"],
-                "num": member["number"],
-            }
-        )
-    for entries in by_state.values():
+        entry = {
+            "call": member["callsign"],
+            "name": member["name"],
+            "num": member["number"],
+        }
+        kind, key = bucket
+        target = by_state if kind == "state" else by_country
+        target.setdefault(key, []).append(entry)
+    for entries in (*by_state.values(), *by_country.values()):
         entries.sort(key=lambda e: e["num"])
-    ordered = {state: by_state[state] for state in sorted(by_state)}
-    return json.dumps(ordered, separators=(",", ":"))
+    data = {
+        "states": {state: by_state[state] for state in sorted(by_state)},
+        "dx": {
+            country: {
+                "flag": COUNTRY_FLAGS.get(country.lower(), "🌍"),
+                "members": by_country[country],
+            }
+            for country in sorted(by_country)
+        },
+    }
+    return json.dumps(data, separators=(",", ":"))
 
 
 US_STATE_NAMES = {
@@ -703,10 +803,11 @@ def main() -> int:
     print("Resolving sponsors for the downline tree")
     resolve_sponsors(members)
 
-    print("Looking up state + mugshot for each member via QRZ XML API")
+    print("Looking up location + mugshot for each member via QRZ XML API")
     annotate_qrz(members)
-    og_count = sum(1 for m in members if m.get("state_og"))
-    print(f"Marked {og_count} state OG(s) across {len({m['state'] for m in members if m.get('state')})} state(s)")
+    state_ogs = sum(1 for m in members if m.get("state_og"))
+    country_ogs = sum(1 for m in members if m.get("country_og"))
+    print(f"Marked {state_ogs} state OG(s) + {country_ogs} country OG(s) on the map")
 
     update_index(members)
     print(f"Updated {INDEX_PATH.name}")
