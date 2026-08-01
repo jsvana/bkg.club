@@ -396,9 +396,25 @@ def download_mugshot(callsign: str, url: str) -> str | None:
     return f"{MUGSHOT_REL_DIR}/{filename}"
 
 
+def mark_territory_ogs(members: list[dict]) -> None:
+    """Badge the earliest member (lowest BKG #) in each map territory, in place.
+
+    The first member in each US map state gets member['state_og'], and the
+    first from each DX country gets member['country_og'] — the international
+    counterpart of the state OG badge.
+    """
+    earliest: dict[tuple[str, str], dict] = {}
+    for member in sorted(members, key=lambda m: m["number"]):
+        bucket = member_map_bucket(member)
+        if bucket and bucket not in earliest:
+            earliest[bucket] = member
+    for (kind, _territory), member in earliest.items():
+        member["state_og" if kind == "state" else "country_og"] = True
+
+
 def annotate_qrz(members: list[dict]) -> None:
-    """Set member['state'], member['country'], member['state_og'], and
-    member['mugshot_path'] in place.
+    """Set member['state'], member['country'], member['state_og'],
+    member['country_og'], and member['mugshot_path'] in place.
 
     Requires env vars QRZ_USERNAME and QRZ_PASSWORD (an XML-subscription QRZ
     account). Raises RuntimeError if creds are missing or login fails.
@@ -407,6 +423,7 @@ def annotate_qrz(members: list[dict]) -> None:
         member["state"] = None
         member["country"] = None
         member["state_og"] = False
+        member["country_og"] = False
         member["mugshot_path"] = None
 
     username = os.environ.get("QRZ_USERNAME")
@@ -445,14 +462,7 @@ def annotate_qrz(members: list[dict]) -> None:
     )
     print(f"  Mugshot resolved for {mugshots}/{len(members)} members (local overrides preferred)", file=sys.stderr)
 
-    # Earliest member in each US map state gets the "<state> OG" badge.
-    earliest: dict[str, dict] = {}
-    for member in sorted(members, key=lambda m: m["number"]):
-        bucket = member_map_bucket(member)
-        if bucket and bucket[0] == "state" and bucket[1] not in earliest:
-            earliest[bucket[1]] = member
-    for member in earliest.values():
-        member["state_og"] = True
+    mark_territory_ogs(members)
 
 
 def first_name_initial(name: str) -> str:
@@ -473,11 +483,23 @@ def first_name_initial(name: str) -> str:
     return f"{first} {last_candidates[-1][0].upper()}"
 
 
-def state_og_badge_html(member: dict) -> str:
-    if not member.get("state_og"):
+def territory_og_badge_html(member: dict) -> str:
+    """Corner ribbon for the first BKG member in a US state or DX country.
+
+    State ribbons show the state code ("UT OG"); country ribbons show the
+    country's flag emoji ("🇨🇦 OG") so long DXCC names don't blow out the
+    ribbon, with the full name in the hover title.
+    """
+    if member.get("state_og"):
+        label = html_escape(member.get("state") or "")
+        title = label
+    elif member.get("country_og"):
+        country = (member.get("country") or "").strip()
+        label = COUNTRY_FLAGS.get(country.lower(), "🌍")
+        title = html_escape(country)
+    else:
         return ""
-    state = html_escape(member.get("state") or "")
-    return f'\n                    <div class="state-og-badge">{state} OG</div>'
+    return f'\n                    <div class="state-og-badge" title="{title} OG">{label} OG</div>'
 
 
 def mugshot_inner_html(member: dict) -> str:
@@ -500,10 +522,10 @@ def render_founder_card(member: dict) -> str:
     callsign = html_escape(member["callsign"])
     name = html_escape(member["name"])
     number = f"BKG #{member['number']:03d}"
-    state_og_html = state_og_badge_html(member)
+    territory_og_html = territory_og_badge_html(member)
     mugshot_inner = mugshot_inner_html(member)
     return f"""                <!-- FOUNDER - {callsign} - THE OG BRASS POUNDER -->
-                <div class="member-card founder-card">{state_og_html}
+                <div class="member-card founder-card">{territory_og_html}
                     <div class="founder-badge">👑 GODFATHER 👑</div>
                     <div class="founder-flames"></div>
                     <div class="mugshot founder-mugshot">
@@ -530,7 +552,7 @@ def render_member_card(member: dict, *, is_og: bool, is_new: bool) -> str:
         badge_html = '\n                    <div class="og-badge">OG</div>'
     elif is_new:
         badge_html = '\n                    <div class="new-badge">NEW!!</div>'
-    badge_html += state_og_badge_html(member)
+    badge_html += territory_og_badge_html(member)
     mugshot_inner = mugshot_inner_html(member)
     return f"""                <!-- {callsign} -->
                 <div class="member-card">{badge_html}
@@ -783,9 +805,9 @@ def main() -> int:
 
     print("Looking up location + mugshot for each member via QRZ XML API")
     annotate_qrz(members)
-    og_count = sum(1 for m in members if m.get("state_og"))
-    countries = {b[1] for b in (member_map_bucket(m) for m in members) if b and b[0] == "dx"}
-    print(f"Marked {og_count} state OG(s); {len(countries)} DX country(ies) on the map")
+    state_ogs = sum(1 for m in members if m.get("state_og"))
+    country_ogs = sum(1 for m in members if m.get("country_og"))
+    print(f"Marked {state_ogs} state OG(s) + {country_ogs} country OG(s) on the map")
 
     update_index(members)
     print(f"Updated {INDEX_PATH.name}")
