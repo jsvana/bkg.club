@@ -35,25 +35,25 @@ B4 u post a single word, set ur **per-server profile** (tap the server name → 
 ```text
 # ⚡ THE BKG DISCORD RULES ⚡
 
-**1. WEAR THE GANG COLORS** — Ur server profile follows the accepted format above. Nothing more, nothing less. A gang that can't tell who's who is just a buncha people typing!!
+**1. WEAR THE GANG COLORS** — Ur profile matches the accepted format above. Nothing more, nothing less!!
 
-**2. KEEP IT RESPECTFUL + KEEP IT PG-13** — Every op in here got jumped in the same way u did, and every op gets treated with respect. No harassment, no hate, no gutter talk. Language, memes + pics stay PG-13 — if u wouldn't send it on the air with the whole gang (and the FCC!!) listening, don't send it here!!
+**2. KEEP IT RESPECTFUL + KEEP IT PG-13** — No harassment, no hate, no gutter talk!!
 
-**3. NO BEEF IN THE FAMILY** — Drama, flame wars + dogpiles get shut down QRT. Got a dispute? Squash it in DMs, or settle it the BKG way — meet on 2m CW and pound it out with a proper QSO!!
+**3. NO BEEF IN THE FAMILY** — Squash it in DMs or settle it on 2m CW!!
 
-**4. POLITICS + RELIGION STAY OFF THE AIR** — Not cuz they're bad!! Cuz they're argument starters — and beef is Rule 3 territory. Hams kept 'em off the air 4ever — BKG keeps 'em off the server too!!
+**4. POLITICS + RELIGION STAY OFF THE AIR** — Not cuz they're bad — cuz they start arguments!!
 
-**5. STAY IN UR LANE** — Post in the right channel!! Spots in spots, shack pics in shack pics. QRL? b4 u hijack a thread, same as u would a frequency!!
+**5. STAY IN UR LANE** — Post in the right channel!! QRL? b4 u hijack a thread!!
 
-**6. NO HUSTLIN' THE GANG** — No spam, no shady links, no schemes, no self-promo. The only pyramid this gang runs is the downline!!
+**6. NO HUSTLIN' THE GANG** — No spam, no shady links, no self-promo. The only pyramid we run is the downline!!
 
-**7. WHAT'S IN THE GANG STAYS IN THE GANG** — Don't share another member's personal info — addresses, emails, home QTH, private convos. A callsign is public. The rest ain't urs 2 share!!
+**7. WHAT'S IN THE GANG STAYS IN THE GANG** — Another member's personal info ain't urs 2 share!!
 
-**8. LEGAL GANG ACTIVITIES ONLY** — We are a law-abiding, FCC-respectin' gang!! No encouraging unlicensed transmitting or out-of-privilege operating. Part 97 is the code of these streets!!
+**8. LEGAL GANG ACTIVITIES ONLY** — Part 97 is the code of these streets!!
 
-**9. RESPECT THE OFFICERS** — Officers keep the peace. If an officer says drop it — drop it. Appeals go 2 DMs, not public meltdowns!!
+**9. RESPECT THE OFFICERS** — If an officer says drop it, drop it!!
 
-🚨 **BREAK THE RULES??** Violation of these rules could result in **LOSS OF DISCORD ACCESS** and **GANG EXCOMMUNICATION**!! U got jumped in the honorable way — a 2m CW QSO. Gettin' jumped out is just one sad lil' click of a button. Don't make an officer click it. 📻
+🚨 Violation of these rules could result in **LOSS OF DISCORD ACCESS** and **GANG EXCOMMUNICATION**!! Gettin' jumped out is just one sad lil' click of a button. Don't make an officer click it. 📻
 
 **73 de BKG** 🤜
 ```
