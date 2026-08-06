@@ -57,3 +57,27 @@ B4 u post a single word, set ur **per-server profile** (tap the server name → 
 
 **73 de BKG** 🤜
 ```
+
+## Channel description — the STL stash (forum channel)
+
+Paste into the channel's topic / post guidelines. Fits Discord's 4000-character
+limit with lots of room to spare. Kept to bold + emoji (no `#` headers) so it
+renders anywhere Discord shows channel guidelines.
+
+```text
+**🖨️ WELCOME 2 THE STL STASH 🖨️**
+
+The gang's stash house 4 **STL files + 3D prints**!! Print somethin' worthy? Drop the goods — the file (or link), pics of ur print, and any settings worth knowin'!!
+
+**WHAT GOES IN THE STASH:** ham radio, 2m, CW + BKG adjacent STLs ONLY!!
+🔑 Key + paddle bases, mounts + dust covers
+📻 HT holsters, radio stands + go-box guts
+📡 Antenna winders, mast parts + feedline tidies
+🤜 BKG badges, plaques + gang swag
+
+(Gold filament = instant street cred!! And no printin' actual brass knuckles — we're a law-abiding gang!!)
+
+🚨 **PLZ keep all discussion in here inside those parameters!!** If it ain't about ham radio, 2m, CW, or BKG — **QSY 2 another channel!!** 🚨
+
+Feed the stash!! 🤜 73 de BKG 📻
+```
