@@ -81,3 +81,24 @@ The gang's stash house 4 **STL files + 3D prints**!! Print somethin' worthy? Dro
 
 Feed the stash!! 🤜 73 de BKG 📻
 ```
+
+## Channel description — the prospect channel (e.g. #the-corner)
+
+For the prospects-only channel (visible to roleless new joiners). Fits the
+1024-character channel-topic limit, and works as a pinned welcome message too.
+"Top Brass" is the officer role name — swap it if the gang picks another.
+
+```text
+**🤜 WELCOME 2 THE CORNER 🤜**
+
+U found the Brass Knuckle Gang — a law-abiding, FCC-respectin' gang 4 amateur radio operators. This corner is where prospects hang b4 they're jumped in. The rest of the clubhouse? Locked til u earn ur number!!
+
+**HOW 2 GET JUMPED IN:**
+📻 Work a BKG member on **2 meter CW** — that's the whole initiation!!
+✍️ Ur sponsor sends in the QSO (date, time, band) at bkg.club
+👑 The Top Brass assigns ur official **BKG #** + unlocks the whole server
+
+No CW yet? No radio? No license?? Don't sweat it — hang on the corner, ask questions, and the gang will get u on the air. Recruitin' the worthy is what we DO!!
+
+**73 de BKG 🤜 2m CW or bust!!**
+```
