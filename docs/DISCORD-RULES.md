@@ -86,7 +86,7 @@ Feed the stash!! 🤜 73 de BKG 📻
 
 For the prospects-only channel (visible to roleless new joiners). Fits the
 1024-character channel-topic limit, and works as a pinned welcome message too.
-"Top Brass" is the officer role name — swap it if the gang picks another.
+"Big Homie" is the officer role name.
 
 ```text
 **🤜 WELCOME 2 THE CORNER 🤜**
@@ -96,7 +96,7 @@ U found the Brass Knuckle Gang — a law-abiding, FCC-respectin' gang 4 amateur 
 **HOW 2 GET JUMPED IN:**
 📻 Work a BKG member on **2 meter CW** — that's the whole initiation!!
 ✍️ Ur sponsor sends in the QSO (date, time, band) at bkg.club
-👑 The Top Brass assigns ur official **BKG #** + unlocks the whole server
+👑 A Big Homie assigns ur official **BKG #** + unlocks the whole server
 
 No CW yet? No radio? No license?? Don't sweat it — hang on the corner, ask questions, and the gang will get u on the air. Recruitin' the worthy is what we DO!!
 
