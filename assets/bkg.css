@@ -547,6 +547,105 @@ body {
 .confirm-actions .back-link { margin-bottom: 0; }
 .confirm-actions .submit-btn { width: auto; padding: 10px 22px; font-size: 1.3rem; }
 
+/* ============================================================
+   BADGE FORGE (logo.html)
+   ============================================================ */
+
+/* ---- passphrase gate ---- */
+.gate {
+    display: none;
+    background: linear-gradient(135deg, #2a1a00 0%, #0a0500 100%);
+    border: 4px ridge var(--brass-light);
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.3);
+    padding: 26px 22px;
+    max-width: 520px;
+    margin: 0 auto;
+    text-align: center;
+}
+.gate.show { display: block; }
+.gate-lock { font-size: 3rem; line-height: 1; margin-bottom: 6px; }
+.gate-title {
+    font-family: 'Bangers', cursive;
+    font-size: 2rem;
+    color: var(--brass-light);
+    text-shadow: 2px 2px 0 var(--blood-red);
+    letter-spacing: 2px;
+}
+.gate-lead {
+    font-family: 'Special Elite', monospace;
+    color: var(--lime);
+    font-size: 0.85rem;
+    margin: 8px 0 20px;
+}
+.gate .form-row { text-align: left; margin-bottom: 16px; }
+.gate-fineprint {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.68rem;
+    color: #7a7a7a;
+    line-height: 1.6;
+    margin-top: 18px;
+    border-top: 1px dashed var(--brass-dark);
+    padding-top: 12px;
+}
+
+/* ---- the forge itself ---- */
+.forge { display: none; }
+.forge.show { display: block; }
+.forge-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+    gap: 22px;
+    align-items: start;
+}
+.forge-controls {
+    background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+    border: 4px ridge var(--brass);
+    padding: 20px;
+}
+.forge-controls .form-fieldset:last-child { margin-bottom: 0; }
+
+.forge-preview { position: sticky; top: 16px; }
+.preview-frame {
+    background:
+        repeating-conic-gradient(#1c1c1c 0% 25%, #111 0% 50%) 50% / 24px 24px;
+    border: 4px ridge var(--brass);
+    padding: 14px;
+    margin-bottom: 14px;
+}
+.preview-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+}
+/* Off-screen text ruler — must stay laid out (not display:none) for
+   getComputedTextLength() to return real numbers. */
+.text-ruler {
+    position: absolute;
+    left: -99999px;
+    top: 0;
+    pointer-events: none;
+}
+.preview-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.preview-actions .submit-btn { font-size: 1.25rem; padding: 10px; }
+.forge-preview .tree-ctrl { width: 100%; }
+.preview-note {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.68rem;
+    color: #7a7a7a;
+    line-height: 1.6;
+    margin-top: 12px;
+}
+
+@media (max-width: 860px) {
+    .forge-grid { grid-template-columns: 1fr; }
+    .forge-preview { position: static; order: -1; }
+}
+
 /* Footer */
 .footer {
     background: linear-gradient(180deg, var(--brass-dark) 0%, #000 100%);

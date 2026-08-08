@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>~*~BKG BADGE FORGE~*~ Members Only!!</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%231a0a00' stroke='%23D4AF37' stroke-width='2'/%3E%3Crect x='5' y='20' width='22' height='6' rx='2' fill='%23D4AF37'/%3E%3Crect x='5' y='16' width='22' height='5' fill='%23D4AF37'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/bkg.css">
+</head>
+<body>
+    <div class="tiled-bg"></div>
+    <div class="grunge-overlay"></div>
+    <div class="floating-knuckle">🤜</div>
+    <div class="floating-knuckle">🤛</div>
+    <div class="floating-knuckle">🤜</div>
+    <div class="floating-knuckle">🤛</div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-area">
+                <div>
+                    <a href="index.html" class="logo-text"><span>BKG</span>.club</a>
+                    <div class="tagline">Get ur brass on the air!! ✨</div>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html#home">HOME</a> |
+                <a href="index.html#bylaws">BYLAWS</a> |
+                <a href="index.html#join">JOIN</a> |
+                <a href="index.html#roster">ROSTER</a> |
+                <a href="index.html#map">MAP</a> |
+                <a href="tree.html">DOWNLINE</a> |
+                <a href="recruit.html">RECRUIT</a> |
+                <a href="logo.html" class="active">BADGES</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="marquee-container">
+        <div class="marquee-text">
+            ★彡 FORGE UR OWN BKG BADGE!! 彡★ MEMBERS ONLY!! 彡★ SLAP IT ON UR QSL CARD!! 彡★ STICKERS!! AVATARS!! 彡★ 2 METER CW OR BUST!!! 彡★
+        </div>
+    </div>
+
+    <main class="main-wrapper">
+        <a href="index.html" class="back-link">⟵ BACK 2 HQ</a>
+        <h2 class="section-title">BADGE FORGE</h2>
+        <div class="section-subtitle">🤜 Pound out ur own personalized BKG badge 🤜</div>
+
+        <!-- ============ PASSWORD GATE ============ -->
+        <section class="gate" id="gate">
+            <div class="gate-lock">🔒</div>
+            <h3 class="gate-title">MEMBERS ONLY</h3>
+            <p class="gate-lead">The forge is gang-only. Ask an officer for the passphrase.</p>
+            <form id="gateForm" autocomplete="off">
+                <div class="form-row">
+                    <label for="gatePass">Passphrase</label>
+                    <input type="password" id="gatePass" autocomplete="current-password" autocapitalize="off" spellcheck="false" required>
+                </div>
+                <button type="submit" class="submit-btn" id="gateBtn">🤜 UNLOCK THE FORGE 🤜</button>
+            </form>
+            <div class="form-error" id="gateError"></div>
+            <p class="gate-fineprint">
+                Heads up: this is a front-door lock, not a vault. It keeps randos and
+                search engines out — it can't stop someone determined who has the
+                passphrase or time to guess it. Nothing secret lives behind it.
+            </p>
+        </section>
+
+        <!-- ============ THE FORGE ============ -->
+        <section class="forge" id="forge">
+            <div class="form-note">
+                <strong>HOW IT WORKS:</strong> Everything happens right here in ur browser —
+                nothing gets uploaded, no accounts, no AI credits burned. Pick ur callsign,
+                tweak the text, grab a PNG for QSL cards / stickers / profile pics, or an
+                SVG if u want it razor sharp at any size. 🤜📡
+            </div>
+
+            <div class="forge-grid">
+                <!-- ---- controls ---- -->
+                <div class="forge-controls">
+                    <div class="form-fieldset">
+                        <div class="form-legend">📻 WHO R U</div>
+                        <div class="form-row">
+                            <label for="memberPick">Pick ur callsign</label>
+                            <select id="memberPick">
+                                <option value="">— loading roster… —</option>
+                            </select>
+                            <div class="form-hint">Autofills from the live roster. Or just type below.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-fieldset">
+                        <div class="form-legend">✍️ THE WORDS</div>
+                        <div class="form-row">
+                            <label for="topText">Top arc</label>
+                            <input type="text" id="topText" value="BRASS KNUCKLE GANG" maxlength="40" autocomplete="off">
+                        </div>
+                        <div class="form-row">
+                            <label for="centerText">Big center text</label>
+                            <input type="text" id="centerText" value="BKG" maxlength="14" autocomplete="off">
+                        </div>
+                        <div class="form-row">
+                            <label for="subText">Line under it</label>
+                            <input type="text" id="subText" value="" maxlength="28" placeholder="e.g. KI7QCF · BKG #1" autocomplete="off">
+                        </div>
+                        <div class="form-row">
+                            <label for="botText">Bottom arc</label>
+                            <input type="text" id="botText" value="144.025 MHz" maxlength="40" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="form-fieldset">
+                        <div class="form-legend">🎨 THE LOOK</div>
+                        <div class="form-grid">
+                            <div class="form-row">
+                                <label for="metalPick">Metal</label>
+                                <select id="metalPick"></select>
+                            </div>
+                            <div class="form-row">
+                                <label for="bodyPick">Badge body</label>
+                                <select id="bodyPick"></select>
+                            </div>
+                            <div class="form-row">
+                                <label for="bgPick">Background</label>
+                                <select id="bgPick"></select>
+                            </div>
+                            <div class="form-row">
+                                <label for="sizePick">PNG size</label>
+                                <select id="sizePick">
+                                    <option value="512">512 × 512</option>
+                                    <option value="1024" selected>1024 × 1024</option>
+                                    <option value="2048">2048 × 2048</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ---- preview ---- -->
+                <div class="forge-preview">
+                    <div class="preview-frame" id="previewFrame">
+                        <img id="previewImg" alt="Ur BKG badge preview">
+                    </div>
+                    <!-- Off-screen ruler. Text is measured with a real SVG <text>
+                         node so the numbers come from the same layout engine that
+                         renders the badge — a <canvas> measureText estimate drifts
+                         and long arc text ends up clipped by the path. -->
+                    <svg class="text-ruler" width="200" height="200" aria-hidden="true" focusable="false">
+                        <text id="ruler" x="0" y="100"></text>
+                    </svg>
+                    <div class="preview-actions">
+                        <button type="button" class="submit-btn" id="dlPng">⬇ PNG</button>
+                        <button type="button" class="submit-btn" id="dlSvg">⬇ SVG</button>
+                    </div>
+                    <button type="button" class="tree-ctrl" id="resetBtn">↺ RESET 2 STOCK</button>
+                    <div class="preview-note">
+                        Renders with ur system's heaviest sans (Arial Black / Impact), so it
+                        looks the same everywhere it counts. The SVG is text, not pixels —
+                        blows up to sticker size clean.
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-text">© 2024 BRASS KNUCKLE GANG | All Rights Reserved | 73 de BKG 🤜</div>
+        <div class="footer-links">
+            <a href="tree.html">DOWNLINE</a>
+            <a href="index.html#roster">ROSTER</a>
+            <a href="index.html#home">TOP</a>
+        </div>
+    </footer>
+
+    <script>
+    /* ============================================================
+       BKG BADGE FORGE
+       ------------------------------------------------------------
+       Two independent pieces:
+
+       1. GATE  — a PBKDF2-SHA256 passphrase check. The passphrase
+                  itself is NOT in this file; only a salted hash is.
+                  Rotate it with scripts/set-logo-password.py.
+
+                  Be honest about what this buys: bkg.club is a
+                  static site served from a PUBLIC repo, so this is a
+                  deterrent, not access control. It stops drive-by
+                  visitors and keeps the page out of search results.
+                  Someone with the hash can brute-force a weak
+                  passphrase offline. That's an acceptable trade here
+                  ONLY because there's nothing valuable behind it —
+                  no API keys, no member PII, no per-use cost. If we
+                  ever put something that costs money or leaks data
+                  behind this door, the check has to move server-side.
+                  See docs/LOGO-GENERATOR.md.
+
+       2. FORGE — builds the badge as an SVG string from the form
+                  values, rasterizes it through a <canvas> for PNG
+                  export. No network calls, no uploads, no API.
+       ============================================================ */
+
+    /* GATE:START */
+    const GATE = {
+        salt: "GIRDIHj/g9OtBSvGCsInug==",
+        iterations: 250000,
+        hash: "C0RuMfy6trJpIZBuTzjtoo9Izf+Eh872tAm5ALokr6s="
+    };
+    /* GATE:END */
+
+    const GATE_SESSION_KEY = "bkg-forge-unlocked";
+
+    // ---------- helpers ----------
+    function b64ToBytes(b64) {
+        const bin = atob(b64);
+        const out = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+    }
+    function bytesEqual(a, b) {
+        if (a.length !== b.length) return false;
+        let diff = 0;
+        for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+        return diff === 0;
+    }
+    function esc(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    // ============================================================
+    // 1. GATE
+    // ============================================================
+    (function () {
+        const gate = document.getElementById('gate');
+        const forge = document.getElementById('forge');
+        const form = document.getElementById('gateForm');
+        const input = document.getElementById('gatePass');
+        const btn = document.getElementById('gateBtn');
+        const errorBox = document.getElementById('gateError');
+        const BTN_LABEL = btn.textContent;
+
+        function showError(msg) {
+            errorBox.textContent = msg;
+            errorBox.classList.add('show');
+        }
+
+        function unlock() {
+            gate.classList.remove('show');
+            forge.classList.add('show');
+            if (window.BKG_FORGE_INIT) window.BKG_FORGE_INIT();
+        }
+
+        // crypto.subtle only exists in secure contexts (https / localhost).
+        if (!window.crypto || !window.crypto.subtle) {
+            gate.classList.add('show');
+            showError("This page needs a secure connection (https) to check the passphrase. Try https://www.bkg.club/logo.html");
+            form.style.display = 'none';
+            return;
+        }
+
+        if (sessionStorage.getItem(GATE_SESSION_KEY) === 'ok') {
+            unlock();
+        } else {
+            gate.classList.add('show');
+        }
+
+        async function derive(passphrase) {
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                new TextEncoder().encode(passphrase),
+                'PBKDF2',
+                false,
+                ['deriveBits']
+            );
+            const bits = await crypto.subtle.deriveBits(
+                {
+                    name: 'PBKDF2',
+                    salt: b64ToBytes(GATE.salt),
+                    iterations: GATE.iterations,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                256
+            );
+            return new Uint8Array(bits);
+        }
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            errorBox.classList.remove('show');
+            const pass = input.value;
+            if (!pass) return;
+
+            btn.disabled = true;
+            btn.textContent = '🔑 CHECKING…';
+            try {
+                const got = await derive(pass);
+                if (bytesEqual(got, b64ToBytes(GATE.hash))) {
+                    sessionStorage.setItem(GATE_SESSION_KEY, 'ok');
+                    unlock();
+                    return;
+                }
+                showError("❌ Nope. That ain't it. Ask an officer for the passphrase.");
+            } catch (err) {
+                showError("Couldn't check that passphrase (" + (err.message || 'unknown error') + ").");
+            }
+            btn.disabled = false;
+            btn.textContent = BTN_LABEL;
+            input.select();
+        });
+    })();
+
+    // ============================================================
+    // 2. FORGE
+    // ============================================================
+    (function () {
+        // ---- badge geometry (all in a 1024x1024 user space) ----
+        const S = 1024, C = S / 2;
+        const R_RIM    = 492;  // outer edge of the badge body
+        const R_RING1  = 470;  // fat outer metal ring
+        const R_RING2  = 448;  // thin ring closing the text band
+        const R_RING3  = 352;  // inner ring around the knuckles
+        const R_ARC_TOP = 378; // baseline radius, top arc text
+        const R_ARC_BOT = 424; // baseline radius, bottom arc text (glyphs hang inward)
+
+        const FONT_SVG = 'Arial Black, Arial Bold, Impact, Haettenschweiler, Arial, sans-serif';
+        const FONT_CSS = '900 {SIZE}px "Arial Black", Impact, Arial, sans-serif';
+
+        const METALS = {
+            silver: { label: 'Chrome / Silver', stops: ['#FFFFFF', '#DCDCDC', '#9A9A9A', '#F2F2F2'] },
+            brass:  { label: 'Brass (house)',   stops: ['#FFF6D0', '#FFD700', '#B8860B', '#F6E27A'] },
+            copper: { label: 'Copper',          stops: ['#FFDCC0', '#E08A4A', '#8B4513', '#F2B489'] },
+            lime:   { label: 'Toxic Lime',      stops: ['#EAFFDE', '#39FF14', '#1A7A08', '#B6FF9E'] },
+            pink:   { label: 'Hot Pink',        stops: ['#FFDFF0', '#FF1493', '#8B0050', '#FFA8D4'] }
+        };
+        const BODIES = {
+            black: { label: 'Black',      color: '#0B0B0B' },
+            blood: { label: 'Blood Red',  color: '#4E0000' },
+            navy:  { label: 'Midnight',   color: '#050A1E' },
+            brown: { label: 'Dark Brass', color: '#1F1503' }
+        };
+        const BACKGROUNDS = {
+            none:  { label: 'Transparent', color: null },
+            black: { label: 'Black',       color: '#000000' },
+            plate: { label: 'Light Plate', color: '#E9E9EE' },
+            white: { label: 'White',       color: '#FFFFFF' }
+        };
+
+        const DEFAULTS = {
+            topText: 'BRASS KNUCKLE GANG',
+            centerText: 'BKG',
+            subText: '',
+            botText: '144.025 MHz',
+            metal: 'silver',
+            body: 'black',
+            bg: 'none'
+        };
+
+        const el = {
+            memberPick: document.getElementById('memberPick'),
+            topText:    document.getElementById('topText'),
+            centerText: document.getElementById('centerText'),
+            subText:    document.getElementById('subText'),
+            botText:    document.getElementById('botText'),
+            metalPick:  document.getElementById('metalPick'),
+            bodyPick:   document.getElementById('bodyPick'),
+            bgPick:     document.getElementById('bgPick'),
+            sizePick:   document.getElementById('sizePick'),
+            previewImg: document.getElementById('previewImg'),
+            dlPng:      document.getElementById('dlPng'),
+            dlSvg:      document.getElementById('dlSvg'),
+            resetBtn:   document.getElementById('resetBtn')
+        };
+
+        // ---- text measurement, so nothing ever overflows the badge ----
+        const ruler = document.getElementById('ruler');
+        const measureCtx = document.createElement('canvas').getContext('2d');
+
+        function measure(text, size, tracking) {
+            ruler.setAttribute('font-family', FONT_SVG);
+            ruler.setAttribute('font-weight', '900');
+            ruler.setAttribute('font-size', size);
+            ruler.setAttribute('letter-spacing', tracking);
+            ruler.textContent = text;
+            const w = ruler.getComputedTextLength();
+            if (w > 0) return w;
+            // Ruler isn't laid out yet (very early call) — fall back to canvas.
+            measureCtx.font = FONT_CSS.replace('{SIZE}', size);
+            return measureCtx.measureText(text).width + tracking * Math.max(0, text.length - 1);
+        }
+
+        // Shrink `size` until the string fits `maxWidth`. Never grows past `size`.
+        // Iterates because letter-spacing scales with the font size, so one
+        // proportional step lands close but not exactly on the target.
+        function fitSize(text, size, maxWidth, trackingRatio) {
+            if (!text) return size;
+            let current = size;
+            for (let i = 0; i < 8; i++) {
+                const w = measure(text, current, current * trackingRatio);
+                if (w <= maxWidth) break;
+                const next = Math.max(12, Math.floor(current * (maxWidth / w)));
+                if (next >= current) { current = current - 1; } else { current = next; }
+                if (current <= 12) break;
+            }
+            return Math.max(12, current);
+        }
+
+        // ---- the knuckle duster, as a mask ----
+        // Each finger gets a filled disc (the rim) with a smaller disc knocked
+        // out of it (the hole); a lens-shaped grip bar unions them together.
+        // Hole spacing is deliberate: adjacent holes must stay clear of each
+        // other (or they merge into one slot), while the rims around them must
+        // overlap (that overlap is what scallops the top edge).
+        const HOLES = [
+            { x: -141, y: -18, r: 38, rim: 16 },
+            { x:  -48, y: -18, r: 42, rim: 16 },
+            { x:   48, y: -18, r: 42, rim: 16 },
+            { x:  141, y: -18, r: 38, rim: 16 }
+        ];
+        // Top edge sits below every hole so the grip reads as one solid bar.
+        const GRIP = 'M -196,30 C -200,62 -136,96 0,96 C 136,96 200,62 196,30 Z';
+        const KNUCKLE_ORIGIN = { x: 512, y: 370, scale: 1.22 };
+
+        function knuckleMask() {
+            const rims = HOLES.map(function (h) {
+                return '<circle cx="' + h.x + '" cy="' + h.y + '" r="' + (h.r + h.rim) + '" fill="#fff"/>';
+            }).join('');
+            const holes = HOLES.map(function (h) {
+                return '<circle cx="' + h.x + '" cy="' + h.y + '" r="' + h.r + '" fill="#000"/>';
+            }).join('');
+            return '<mask id="knuckles" maskUnits="userSpaceOnUse" x="0" y="0" width="' + S + '" height="' + S + '">' +
+                   '<rect x="0" y="0" width="' + S + '" height="' + S + '" fill="#000"/>' +
+                   '<g transform="translate(' + KNUCKLE_ORIGIN.x + ',' + KNUCKLE_ORIGIN.y + ') scale(' + KNUCKLE_ORIGIN.scale + ')">' +
+                   rims + '<path d="' + GRIP + '" fill="#fff"/>' + holes +
+                   '</g></mask>';
+        }
+
+        // ---- arc text ----
+        // Top arc runs 9 o'clock -> 12 -> 3 (sweep 1) so glyphs sit upright
+        // outside the baseline. Bottom arc runs 9 -> 6 -> 3 (sweep 0) so
+        // glyphs sit upright hanging inside it. Same band either way.
+        function arcPath(id, radius, sweep) {
+            return '<path id="' + id + '" fill="none" d="M ' + (C - radius) + ',' + C +
+                   ' A ' + radius + ',' + radius + ' 0 0 ' + sweep + ' ' + (C + radius) + ',' + C + '"/>';
+        }
+        function arcText(pathId, radius, text, baseSize) {
+            if (!text) return '';
+            // Glyphs that run off the end of a path are silently dropped, so the
+            // text has to fit the arc. Shrink to fit, then pin the final width
+            // with textLength so rounding or a font substitution can't push it
+            // back over on someone else's machine.
+            const available = Math.PI * radius * 0.86;
+            const size = fitSize(text, baseSize, available, 0.08);
+            const tracking = size * 0.08;
+            const width = Math.min(measure(text, size, tracking), available);
+            return '<text font-family="' + FONT_SVG + '" font-weight="900" font-size="' + size +
+                   '" letter-spacing="' + tracking.toFixed(2) + '" fill="url(#metal)">' +
+                   '<textPath xlink:href="#' + pathId + '" href="#' + pathId +
+                   '" startOffset="50%" text-anchor="middle" textLength="' + width.toFixed(1) +
+                   '" lengthAdjust="spacingAndGlyphs">' + esc(text) + '</textPath></text>';
+        }
+
+        // ---- the whole badge ----
+        function buildSvg(o) {
+            const metal = METALS[o.metal] || METALS.silver;
+            const body = BODIES[o.body] || BODIES.black;
+            const bg = BACKGROUNDS[o.bg] || BACKGROUNDS.none;
+
+            const gradient =
+                '<linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">' +
+                '<stop offset="0" stop-color="' + metal.stops[0] + '"/>' +
+                '<stop offset="0.42" stop-color="' + metal.stops[1] + '"/>' +
+                '<stop offset="0.58" stop-color="' + metal.stops[2] + '"/>' +
+                '<stop offset="1" stop-color="' + metal.stops[3] + '"/>' +
+                '</linearGradient>';
+
+            // Center block shifts up a touch when there's a sub-line to balance.
+            const hasSub = !!o.subText;
+            const centerY = hasSub ? 688 : 716;
+            const centerMax = hasSub ? 540 : 520;
+            const centerSize = fitSize(o.centerText, 168, centerMax, 0.02);
+            const subSize = fitSize(o.subText, 46, 420, 0.06);
+
+            // Hang the divider off the top of the big text rather than pinning it
+            // to a fixed y: the text moves up when there's a sub-line and shrinks
+            // when it's long, and a fixed divider collides with it either way.
+            // Clamped so it never rides into the knuckles or drifts too low.
+            const centerCapTop = centerY - centerSize * 0.72;
+            const dashY = Math.max(512, Math.min(566, Math.round(centerCapTop - 36)));
+
+            let out = '';
+            out += '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"';
+            out += ' width="' + S + '" height="' + S + '" viewBox="0 0 ' + S + ' ' + S + '">';
+            out += '<defs>' + gradient +
+                   arcPath('arcTop', R_ARC_TOP, 1) +
+                   arcPath('arcBot', R_ARC_BOT, 0) +
+                   knuckleMask() + '</defs>';
+
+            if (bg.color) {
+                out += '<rect x="0" y="0" width="' + S + '" height="' + S + '" fill="' + bg.color + '"/>';
+            }
+
+            // badge body + rings
+            out += '<circle cx="' + C + '" cy="' + C + '" r="' + R_RIM + '" fill="' + body.color + '"/>';
+            out += '<circle cx="' + C + '" cy="' + C + '" r="' + R_RING1 + '" fill="none" stroke="url(#metal)" stroke-width="14"/>';
+            out += '<circle cx="' + C + '" cy="' + C + '" r="' + R_RING2 + '" fill="none" stroke="url(#metal)" stroke-width="5"/>';
+            out += '<circle cx="' + C + '" cy="' + C + '" r="' + R_RING3 + '" fill="none" stroke="url(#metal)" stroke-width="8"/>';
+
+            // arc text
+            out += arcText('arcTop', R_ARC_TOP, o.topText, 64);
+            out += arcText('arcBot', R_ARC_BOT, o.botText, 60);
+
+            // knuckles, painted by masking a full-bleed gradient rect
+            out += '<rect x="0" y="0" width="' + S + '" height="' + S + '" fill="url(#metal)" mask="url(#knuckles)"/>';
+
+            // Divider dashes. These are rects, not lines, on purpose: the metal
+            // gradient is objectBoundingBox-relative, and a horizontal <line>
+            // has a zero-height box, which collapses the gradient to nothing.
+            out += '<g fill="url(#metal)">' +
+                   '<rect x="362" y="' + dashY + '" width="92" height="8" rx="4"/>' +
+                   '<rect x="482" y="' + dashY + '" width="60" height="8" rx="4"/>' +
+                   '<rect x="570" y="' + dashY + '" width="92" height="8" rx="4"/>' +
+                   '</g>';
+
+            // center text
+            if (o.centerText) {
+                out += '<text x="' + C + '" y="' + centerY + '" text-anchor="middle"' +
+                       ' font-family="' + FONT_SVG + '" font-weight="900" font-size="' + centerSize +
+                       '" letter-spacing="' + (centerSize * 0.02).toFixed(2) + '" fill="url(#metal)">' +
+                       esc(o.centerText) + '</text>';
+            }
+            if (hasSub) {
+                out += '<text x="' + C + '" y="776" text-anchor="middle"' +
+                       ' font-family="' + FONT_SVG + '" font-weight="900" font-size="' + subSize +
+                       '" letter-spacing="' + (subSize * 0.06).toFixed(2) + '" fill="url(#metal)">' +
+                       esc(o.subText) + '</text>';
+            }
+
+            out += '</svg>';
+            return out;
+        }
+
+        function readForm() {
+            return {
+                topText:    el.topText.value.trim(),
+                centerText: el.centerText.value.trim(),
+                subText:    el.subText.value.trim(),
+                botText:    el.botText.value.trim(),
+                metal:      el.metalPick.value,
+                body:       el.bodyPick.value,
+                bg:         el.bgPick.value
+            };
+        }
+
+        // SVG -> data URL. Base64 so unicode in the text survives the trip,
+        // and so the <img> never taints the canvas we draw it into.
+        // Built byte-by-byte in chunks: String.fromCharCode.apply blows the
+        // argument limit on long badges.
+        function svgDataUrl(svg) {
+            const bytes = new TextEncoder().encode(svg);
+            let bin = '';
+            for (let i = 0; i < bytes.length; i += 0x8000) {
+                bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+            }
+            return 'data:image/svg+xml;base64,' + btoa(bin);
+        }
+
+        let currentSvg = '';
+        function render() {
+            currentSvg = buildSvg(readForm());
+            el.previewImg.src = svgDataUrl(currentSvg);
+        }
+
+        function slug(s) {
+            return (s || 'bkg').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'bkg';
+        }
+        function saveBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        }
+
+        function downloadPng() {
+            const size = parseInt(el.sizePick.value, 10) || 1024;
+            const name = 'bkg-badge-' + slug(el.centerText.value) + '-' + size + '.png';
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                canvas.width = canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, size, size);
+                canvas.toBlob(function (blob) {
+                    if (blob) saveBlob(blob, name);
+                }, 'image/png');
+            };
+            img.onerror = function () {
+                alert("Couldn't rasterize the badge in this browser. The SVG download still works.");
+            };
+            img.src = svgDataUrl(currentSvg);
+        }
+
+        function downloadSvg() {
+            const name = 'bkg-badge-' + slug(el.centerText.value) + '.svg';
+            saveBlob(new Blob([currentSvg], { type: 'image/svg+xml;charset=utf-8' }), name);
+        }
+
+        // ---- roster autofill (reads the same members.txt the build script writes) ----
+        // Lines look like:  KI7QCF 🤜 Forrest S BKG #1
+        const MEMBER_LINE = /^(\S+)\s+🤜\s+(.+?)\s+BKG\s+#(\d+)\s*$/;
+        function loadRoster() {
+            fetch('members.txt', { cache: 'no-cache' })
+                .then(function (r) { return r.ok ? r.text() : Promise.reject(new Error(r.status)); })
+                .then(function (text) {
+                    const members = text.split('\n').reduce(function (acc, line) {
+                        const m = MEMBER_LINE.exec(line.trim());
+                        if (m) acc.push({ call: m[1], name: m[2], num: m[3] });
+                        return acc;
+                    }, []);
+                    if (!members.length) throw new Error('no members parsed');
+
+                    el.memberPick.innerHTML = '<option value="">— pick a member —</option>' +
+                        members.map(function (m) {
+                            return '<option value="' + esc(m.call) + '">' + esc(m.call) +
+                                   ' — ' + esc(m.name) + ' (#' + esc(m.num) + ')</option>';
+                        }).join('');
+
+                    el.memberPick.addEventListener('change', function () {
+                        const picked = members.filter(function (m) { return m.call === el.memberPick.value; })[0];
+                        if (!picked) return;
+                        el.centerText.value = picked.call;
+                        el.subText.value = 'BKG #' + picked.num;
+                        el.botText.value = '144.025 MHz';
+                        render();
+                    });
+                })
+                .catch(function () {
+                    el.memberPick.innerHTML = '<option value="">— roster unavailable, type it below —</option>';
+                    el.memberPick.disabled = true;
+                });
+        }
+
+        function fillSelect(select, table, selected) {
+            select.innerHTML = Object.keys(table).map(function (key) {
+                return '<option value="' + key + '"' + (key === selected ? ' selected' : '') + '>' +
+                       esc(table[key].label) + '</option>';
+            }).join('');
+        }
+
+        function reset() {
+            el.topText.value = DEFAULTS.topText;
+            el.centerText.value = DEFAULTS.centerText;
+            el.subText.value = DEFAULTS.subText;
+            el.botText.value = DEFAULTS.botText;
+            el.metalPick.value = DEFAULTS.metal;
+            el.bodyPick.value = DEFAULTS.body;
+            el.bgPick.value = DEFAULTS.bg;
+            el.memberPick.value = '';
+            render();
+        }
+
+        let booted = false;
+        window.BKG_FORGE_INIT = function () {
+            if (booted) return;
+            booted = true;
+
+            fillSelect(el.metalPick, METALS, DEFAULTS.metal);
+            fillSelect(el.bodyPick, BODIES, DEFAULTS.body);
+            fillSelect(el.bgPick, BACKGROUNDS, DEFAULTS.bg);
+
+            ['topText', 'centerText', 'subText', 'botText'].forEach(function (id) {
+                el[id].addEventListener('input', render);
+            });
+            ['metalPick', 'bodyPick', 'bgPick'].forEach(function (id) {
+                el[id].addEventListener('change', render);
+            });
+            el.dlPng.addEventListener('click', downloadPng);
+            el.dlSvg.addEventListener('click', downloadSvg);
+            el.resetBtn.addEventListener('click', reset);
+
+            loadRoster();
+
+            // Web fonts don't affect the badge (it uses system faces), but wait
+            // for font settle anyway so the first measure() is accurate.
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(render);
+            }
+            render();
+        };
+    })();
+    </script>
+</body>
+</html>
