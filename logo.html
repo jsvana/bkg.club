@@ -75,9 +75,9 @@
         <section class="forge" id="forge">
             <div class="form-note">
                 <strong>HOW IT WORKS:</strong> Everything happens right here in ur browser —
-                nothing gets uploaded, no accounts, no AI credits burned. Pick ur callsign,
-                tweak the text, grab a PNG for QSL cards / stickers / profile pics, or an
-                SVG if u want it razor sharp at any size. 🤜📡
+                nothing gets uploaded, no accounts, no AI credits burned. Pick ur callsign
+                and it gets engraved into the official BKG medallion. Swap the metal, grab
+                a PNG for QSL cards / stickers / profile pics. 🤜📡
             </div>
 
             <div class="forge-grid">
@@ -98,7 +98,8 @@
                         <div class="form-legend">✍️ THE WORDS</div>
                         <div class="form-row">
                             <label for="topText">Top arc</label>
-                            <input type="text" id="topText" value="BRASS KNUCKLE GANG" maxlength="40" autocomplete="off">
+                            <input type="text" id="topText" value="BRASS KNUCKLE GANG" disabled
+                                   title="Stamped into the die — same for every member">
                         </div>
                         <div class="form-row">
                             <label for="centerText">Big center text</label>
@@ -106,11 +107,13 @@
                         </div>
                         <div class="form-row">
                             <label for="subText">Line under it</label>
-                            <input type="text" id="subText" value="" maxlength="28" placeholder="e.g. KI7QCF · BKG #1" autocomplete="off">
+                            <input type="text" id="subText" value="" maxlength="18" placeholder="e.g. BKG #1" autocomplete="off">
                         </div>
                         <div class="form-row">
                             <label for="botText">Bottom arc</label>
-                            <input type="text" id="botText" value="144.025 MHz" maxlength="40" autocomplete="off">
+                            <input type="text" id="botText" value="144.025 MHz" disabled
+                                   title="Stamped into the die — same for every member">
+                            <div class="form-hint">Top + bottom arcs are stamped into the die itself — only the center is urs to engrave.</div>
                         </div>
                     </div>
 
@@ -144,24 +147,19 @@
                 <!-- ---- preview ---- -->
                 <div class="forge-preview">
                     <div class="preview-frame" id="previewFrame">
-                        <img id="previewImg" alt="Ur BKG badge preview">
+                        <canvas id="previewCanvas" width="1254" height="1254" role="img"
+                                aria-label="Ur BKG badge preview"></canvas>
                     </div>
-                    <!-- Off-screen ruler. Text is measured with a real SVG <text>
-                         node so the numbers come from the same layout engine that
-                         renders the badge — a <canvas> measureText estimate drifts
-                         and long arc text ends up clipped by the path. -->
-                    <svg class="text-ruler" width="200" height="200" aria-hidden="true" focusable="false">
-                        <text id="ruler" x="0" y="100"></text>
-                    </svg>
                     <div class="preview-actions">
                         <button type="button" class="submit-btn" id="dlPng">⬇ PNG</button>
                         <button type="button" class="submit-btn" id="dlSvg">⬇ SVG</button>
                     </div>
                     <button type="button" class="tree-ctrl" id="resetBtn">↺ RESET 2 STOCK</button>
                     <div class="preview-note">
-                        Renders with ur system's heaviest sans (Arial Black / Impact), so it
-                        looks the same everywhere it counts. The SVG is text, not pixels —
-                        blows up to sticker size clean.
+                        The badge is the real die-struck artwork — ur callsign gets engraved
+                        into it as vector strokes, so it stays razor sharp at any size. PNG
+                        is print-ready up to 2048; the SVG wraps the artwork at full res
+                        (big file, but it opens anywhere).
                     </div>
                 </div>
             </div>
@@ -319,18 +317,31 @@
     // ============================================================
     // 2. FORGE
     // ============================================================
+    // The badge is the club's die-struck medallion artwork
+    // (images/badge-art.png — see scripts/prepare-badge-art.py for how the
+    // centre field was cleared for engraving). Three layers compose it:
+    //
+    //   background  → flat colour, or nothing for transparent
+    //   artwork     → the photo, recoloured per metal/body by a luminance
+    //                 LUT (greyscale in, brass/copper/lime/pink out)
+    //   engraving   → the member's callsign + number, drawn as vector
+    //                 strokes from a hand-built glyph table
+    //
+    // Everything renders on <canvas>, so the preview, the PNG export, and
+    // the (embedded-raster) SVG export all come from the same code path.
+    // The glyphs are paths, not fonts: an SVG or canvas render can't rely
+    // on webfonts, and this way the engraving is identical everywhere and
+    // scales losslessly in the exports.
     (function () {
-        // ---- badge geometry (all in a 1024x1024 user space) ----
-        const S = 1024, C = S / 2;
-        const R_RIM    = 492;  // outer edge of the badge body
-        const R_RING1  = 470;  // fat outer metal ring
-        const R_RING2  = 448;  // thin ring closing the text band
-        const R_RING3  = 352;  // inner ring around the knuckles
-        const R_ARC_TOP = 378; // baseline radius, top arc text
-        const R_ARC_BOT = 424; // baseline radius, bottom arc text (glyphs hang inward)
-
-        const FONT_SVG = 'Arial Black, Arial Bold, Impact, Haettenschweiler, Arial, sans-serif';
-        const FONT_CSS = '900 {SIZE}px "Arial Black", Impact, Arial, sans-serif';
+        // ---- artwork geometry (everything below is in artwork pixels) ----
+        const ART_SRC = 'images/badge-art.png';
+        const ART_SIZE = 1254;
+        const CX = 632;                     // fitted badge centre
+        // Engraving slots in the cleared centre field: between the divider
+        // dashes (y≈712) and the thin ring under the field (y≈900), with the
+        // member line squeezed between that ring and the 144.025 arc (y≈950).
+        const SLOT_CALL = { cy: 812, maxW: 590, maxH: 116 };
+        const SLOT_SUB  = { cy: 925, maxW: 380, maxH: 30 };
 
         const METALS = {
             silver: { label: 'Chrome / Silver', stops: ['#FFFFFF', '#DCDCDC', '#9A9A9A', '#F2F2F2'] },
@@ -353,10 +364,8 @@
         };
 
         const DEFAULTS = {
-            topText: 'BRASS KNUCKLE GANG',
             centerText: 'BKG',
             subText: '',
-            botText: '144.025 MHz',
             metal: 'silver',
             body: 'black',
             bg: 'none'
@@ -372,211 +381,253 @@
             bodyPick:   document.getElementById('bodyPick'),
             bgPick:     document.getElementById('bgPick'),
             sizePick:   document.getElementById('sizePick'),
-            previewImg: document.getElementById('previewImg'),
+            preview:    document.getElementById('previewCanvas'),
             dlPng:      document.getElementById('dlPng'),
             dlSvg:      document.getElementById('dlSvg'),
             resetBtn:   document.getElementById('resetBtn')
         };
 
-        // ---- text measurement, so nothing ever overflows the badge ----
-        const ruler = document.getElementById('ruler');
-        const measureCtx = document.createElement('canvas').getContext('2d');
-
-        function measure(text, size, tracking) {
-            ruler.setAttribute('font-family', FONT_SVG);
-            ruler.setAttribute('font-weight', '900');
-            ruler.setAttribute('font-size', size);
-            ruler.setAttribute('letter-spacing', tracking);
-            ruler.textContent = text;
-            const w = ruler.getComputedTextLength();
-            if (w > 0) return w;
-            // Ruler isn't laid out yet (very early call) — fall back to canvas.
-            measureCtx.font = FONT_CSS.replace('{SIZE}', size);
-            return measureCtx.measureText(text).width + tracking * Math.max(0, text.length - 1);
+        // ---- recolouring ----
+        // The artwork is strictly neutral greyscale, so one luminance ramp
+        // recolours the whole thing. The toe is deliberately flat: the matte
+        // field (lum ≈ 7–19) all lands exactly on the body colour, so healing
+        // grain can't print through, while deeper emboss shadows still fall
+        // darker and keep the stamped depth.
+        function hex(c) {
+            return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
         }
-
-        // Shrink `size` until the string fits `maxWidth`. Never grows past `size`.
-        // Iterates because letter-spacing scales with the font size, so one
-        // proportional step lands close but not exactly on the target.
-        function fitSize(text, size, maxWidth, trackingRatio) {
-            if (!text) return size;
-            let current = size;
-            for (let i = 0; i < 8; i++) {
-                const w = measure(text, current, current * trackingRatio);
-                if (w <= maxWidth) break;
-                const next = Math.max(12, Math.floor(current * (maxWidth / w)));
-                if (next >= current) { current = current - 1; } else { current = next; }
-                if (current <= 12) break;
+        function makeLut(metalKey, bodyKey) {
+            const m = METALS[metalKey].stops.map(hex);
+            const b = hex(BODIES[bodyKey].color);
+            const mix = function (c0, c1, f) {
+                return [0, 1, 2].map(function (i) { return c0[i] * (1 - f) + c1[i] * f; });
+            };
+            const scale = function (c, k, add) {
+                return c.map(function (v) { return Math.min(255, v * k + (add || 0)); });
+            };
+            const stops = [
+                [0.000, scale(b, 0.45)],
+                [0.028, scale(b, 0.92)],
+                [0.075, b],
+                [0.170, scale(b, 1.55, 12)],
+                [0.380, m[2]],
+                [0.620, m[1]],
+                [0.860, m[0]],
+                [1.000, mix(m[0], [255, 255, 255], 0.6)]
+            ];
+            const lut = new Uint8ClampedArray(256 * 3);
+            for (let s = 0; s < stops.length - 1; s++) {
+                const i0 = Math.round(stops[s][0] * 255), i1 = Math.round(stops[s + 1][0] * 255);
+                for (let i = i0; i <= i1; i++) {
+                    const f = (i - i0) / Math.max(1, i1 - i0);
+                    const c = mix(stops[s][1], stops[s + 1][1], f);
+                    lut[i * 3] = c[0]; lut[i * 3 + 1] = c[1]; lut[i * 3 + 2] = c[2];
+                }
             }
-            return Math.max(12, current);
+            return lut;
         }
 
-        // ---- the knuckle duster, as a mask ----
-        // Each finger gets a filled disc (the rim) with a smaller disc knocked
-        // out of it (the hole); a lens-shaped grip bar unions them together.
-        // Hole spacing is deliberate: adjacent holes must stay clear of each
-        // other (or they merge into one slot), while the rims around them must
-        // overlap (that overlap is what scallops the top edge).
-        const HOLES = [
-            { x: -141, y: -18, r: 38, rim: 16 },
-            { x:  -48, y: -18, r: 42, rim: 16 },
-            { x:   48, y: -18, r: 42, rim: 16 },
-            { x:  141, y: -18, r: 38, rim: 16 }
-        ];
-        // Top edge sits below every hole so the grip reads as one solid bar.
-        const GRIP = 'M -196,30 C -200,62 -136,96 0,96 C 136,96 200,62 196,30 Z';
-        const KNUCKLE_ORIGIN = { x: 512, y: 370, scale: 1.22 };
-
-        function knuckleMask() {
-            const rims = HOLES.map(function (h) {
-                return '<circle cx="' + h.x + '" cy="' + h.y + '" r="' + (h.r + h.rim) + '" fill="#fff"/>';
-            }).join('');
-            const holes = HOLES.map(function (h) {
-                return '<circle cx="' + h.x + '" cy="' + h.y + '" r="' + h.r + '" fill="#000"/>';
-            }).join('');
-            return '<mask id="knuckles" maskUnits="userSpaceOnUse" x="0" y="0" width="' + S + '" height="' + S + '">' +
-                   '<rect x="0" y="0" width="' + S + '" height="' + S + '" fill="#000"/>' +
-                   '<g transform="translate(' + KNUCKLE_ORIGIN.x + ',' + KNUCKLE_ORIGIN.y + ') scale(' + KNUCKLE_ORIGIN.scale + ')">' +
-                   rims + '<path d="' + GRIP + '" fill="#fff"/>' + holes +
-                   '</g></mask>';
-        }
-
-        // ---- arc text ----
-        // Top arc runs 9 o'clock -> 12 -> 3 (sweep 1) so glyphs sit upright
-        // outside the baseline. Bottom arc runs 9 -> 6 -> 3 (sweep 0) so
-        // glyphs sit upright hanging inside it. Same band either way.
-        function arcPath(id, radius, sweep) {
-            return '<path id="' + id + '" fill="none" d="M ' + (C - radius) + ',' + C +
-                   ' A ' + radius + ',' + radius + ' 0 0 ' + sweep + ' ' + (C + radius) + ',' + C + '"/>';
-        }
-        function arcText(pathId, radius, text, baseSize) {
-            if (!text) return '';
-            // Glyphs that run off the end of a path are silently dropped, so the
-            // text has to fit the arc. Shrink to fit, then pin the final width
-            // with textLength so rounding or a font substitution can't push it
-            // back over on someone else's machine.
-            const available = Math.PI * radius * 0.86;
-            const size = fitSize(text, baseSize, available, 0.08);
-            const tracking = size * 0.08;
-            const width = Math.min(measure(text, size, tracking), available);
-            return '<text font-family="' + FONT_SVG + '" font-weight="900" font-size="' + size +
-                   '" letter-spacing="' + tracking.toFixed(2) + '" fill="url(#metal)">' +
-                   '<textPath xlink:href="#' + pathId + '" href="#' + pathId +
-                   '" startOffset="50%" text-anchor="middle" textLength="' + width.toFixed(1) +
-                   '" lengthAdjust="spacingAndGlyphs">' + esc(text) + '</textPath></text>';
-        }
-
-        // ---- the whole badge ----
-        function buildSvg(o) {
-            const metal = METALS[o.metal] || METALS.silver;
-            const body = BODIES[o.body] || BODIES.black;
-            const bg = BACKGROUNDS[o.bg] || BACKGROUNDS.none;
-
-            const gradient =
-                '<linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">' +
-                '<stop offset="0" stop-color="' + metal.stops[0] + '"/>' +
-                '<stop offset="0.42" stop-color="' + metal.stops[1] + '"/>' +
-                '<stop offset="0.58" stop-color="' + metal.stops[2] + '"/>' +
-                '<stop offset="1" stop-color="' + metal.stops[3] + '"/>' +
-                '</linearGradient>';
-
-            // Center block shifts up a touch when there's a sub-line to balance.
-            const hasSub = !!o.subText;
-            const centerY = hasSub ? 688 : 716;
-            const centerMax = hasSub ? 540 : 520;
-            const centerSize = fitSize(o.centerText, 168, centerMax, 0.02);
-            const subSize = fitSize(o.subText, 46, 420, 0.06);
-
-            // Hang the divider off the top of the big text rather than pinning it
-            // to a fixed y: the text moves up when there's a sub-line and shrinks
-            // when it's long, and a fixed divider collides with it either way.
-            // Clamped so it never rides into the knuckles or drifts too low.
-            const centerCapTop = centerY - centerSize * 0.72;
-            const dashY = Math.max(512, Math.min(566, Math.round(centerCapTop - 36)));
-
-            let out = '';
-            out += '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"';
-            out += ' width="' + S + '" height="' + S + '" viewBox="0 0 ' + S + ' ' + S + '">';
-            out += '<defs>' + gradient +
-                   arcPath('arcTop', R_ARC_TOP, 1) +
-                   arcPath('arcBot', R_ARC_BOT, 0) +
-                   knuckleMask() + '</defs>';
-
-            if (bg.color) {
-                out += '<rect x="0" y="0" width="' + S + '" height="' + S + '" fill="' + bg.color + '"/>';
+        let artImg = null;
+        const tintCache = {};
+        function tintedArt(metalKey, bodyKey) {
+            const key = metalKey + '|' + bodyKey;
+            if (tintCache[key]) return tintCache[key];
+            const c = document.createElement('canvas');
+            c.width = c.height = ART_SIZE;
+            const ctx = c.getContext('2d');
+            ctx.drawImage(artImg, 0, 0);
+            // silver-on-black IS the artwork; skip the LUT and keep it exact
+            if (!(metalKey === 'silver' && bodyKey === 'black')) {
+                const im = ctx.getImageData(0, 0, ART_SIZE, ART_SIZE);
+                const p = im.data;
+                const lut = makeLut(metalKey, bodyKey);
+                for (let i = 0; i < p.length; i += 4) {
+                    if (!p[i + 3]) continue;
+                    const l = (p[i] + p[i + 1] + p[i + 2]) / 3 | 0;
+                    p[i] = lut[l * 3]; p[i + 1] = lut[l * 3 + 1]; p[i + 2] = lut[l * 3 + 2];
+                }
+                ctx.putImageData(im, 0, 0);
             }
+            tintCache[key] = c;
+            return c;
+        }
 
-            // badge body + rings
-            out += '<circle cx="' + C + '" cy="' + C + '" r="' + R_RIM + '" fill="' + body.color + '"/>';
-            out += '<circle cx="' + C + '" cy="' + C + '" r="' + R_RING1 + '" fill="none" stroke="url(#metal)" stroke-width="14"/>';
-            out += '<circle cx="' + C + '" cy="' + C + '" r="' + R_RING2 + '" fill="none" stroke="url(#metal)" stroke-width="5"/>';
-            out += '<circle cx="' + C + '" cy="' + C + '" r="' + R_RING3 + '" fill="none" stroke="url(#metal)" stroke-width="8"/>';
+        // ---- the engraving ----
+        // Single-stroke letterforms in a 0..1 box, drawn engraved by four
+        // offset strokes (shadow, dark rim, metal face, top highlight).
+        // Hand-built so no font is involved anywhere. (Courtesy of the
+        // club's resident robot rival — credit where due.)
+        const GLYPHS = {
+            A: 'M.06 1L.36 0L.66 1M.16.67L.56.67', B: 'M.08 0V1M.08.06H.39Q.65.06.65.28T.39.5H.08M.39.5Q.68.5.68.75T.39.94H.08',
+            C: 'M.67.13Q.56.02.38.02Q.08.02.08.5T.38.98Q.56.98.67.87', D: 'M.08 0V1M.08.06H.35Q.68.06.68.5T.35.94H.08',
+            E: 'M.66.06H.08V.94H.66M.08.5H.57', F: 'M.66.06H.08V1M.08.5H.57', G: 'M.68.15Q.56.02.38.02Q.08.02.08.5T.39.98Q.68.98.68.67H.43',
+            H: 'M.08 0V1M.68 0V1M.08.5H.68', I: 'M.12.06H.62M.37.06V.94M.12.94H.62', J: 'M.13.06H.65M.58.06V.74Q.58.98.34.98T.08.76',
+            K: 'M.08 0V1M.68.02L.08.56M.31.35L.7 1', L: 'M.08 0V.94H.68', M: 'M.06 1V0L.43.55L.8 0V1', N: 'M.07 1V0L.68 1V0',
+            O: 'M.38.02Q.08.02.08.5T.38.98Q.68.98.68.5T.38.02', P: 'M.08 1V.06H.4Q.68.06.68.34T.4.58H.08',
+            Q: 'M.38.02Q.08.02.08.5T.38.98Q.68.98.68.5T.38.02M.45.72L.72 1', R: 'M.08 1V.06H.4Q.68.06.68.34T.4.57H.08M.4.57L.7 1',
+            S: 'M.67.13Q.56.02.36.02Q.08.02.08.27T.36.5Q.68.52.68.75T.36.98Q.15.98.06.87', T: 'M.03.06H.72M.375.06V1',
+            U: 'M.08 0V.7Q.08.98.38.98T.68.7V0', V: 'M.05 0L.36 1L.69 0', W: 'M.04 0L.2 1L.43.48L.66 1L.82 0',
+            X: 'M.05 0L.7 1M.7 0L.05 1', Y: 'M.04 0L.37.52L.7 0M.37.52V1', Z: 'M.05.06H.69L.05.94H.69',
+            0: 'M.38.02Q.08.02.08.5T.38.98Q.68.98.68.5T.38.02M.15.83L.61.17', 1: 'M.18.22L.38.06V.94M.17.94H.63',
+            2: 'M.08.25Q.1.02.38.02T.68.27Q.68.43.53.57L.09.94H.69', 3: 'M.08.12Q.19.02.4.02T.68.26Q.68.49.4.5M.4.5Q.7.5.7.75T.39.98Q.17.98.06.86',
+            4: 'M.56 1V0L.05.68H.72', 5: 'M.67.06H.12L.08.5Q.21.43.4.43T.69.7Q.69.98.39.98T.06.86',
+            6: 'M.65.12Q.55.02.37.02Q.08.02.08.54T.38.98Q.68.98.68.72T.4.47Q.19.47.08.61', 7: 'M.05.06H.7L.28 1',
+            8: 'M.38.02Q.1.02.1.26T.38.5Q.68.5.68.26T.38.02M.38.5Q.07.5.07.75T.38.98Q.7.98.7.75T.38.5',
+            9: 'M.67.47Q.55.55.37.55Q.08.55.08.28T.38.02Q.68.02.68.48V1', '/': 'M.08 1L.68 0',
+            '.': 'M.37.84L.37.94', '#': 'M.2 0L.12 1M.56 0L.48 1M.02.36H.7M0 .68H.68', '-': 'M.08.5H.68',
+            z: 'M.08.3H.66L.08.94H.68'
+        };
+        const GLYPH_W = { M: .86, W: .86, I: .62, J: .65, 1: .62, '/': .55, '.': .3, '#': .74, '-': .58, ' ': .38, z: .68 };
+        const path2d = {};
+        function glyphOf(ch) {
+            return GLYPHS[ch] !== undefined ? ch
+                 : GLYPHS[ch.toUpperCase()] !== undefined ? ch.toUpperCase()
+                 : null;
+        }
+        function widthOf(ch) { return GLYPH_W[ch] || .76; }
 
-            // arc text
-            out += arcText('arcTop', R_ARC_TOP, o.topText, 64);
-            out += arcText('arcBot', R_ARC_BOT, o.botText, 60);
-
-            // knuckles, painted by masking a full-bleed gradient rect
-            out += '<rect x="0" y="0" width="' + S + '" height="' + S + '" fill="url(#metal)" mask="url(#knuckles)"/>';
-
-            // Divider dashes. These are rects, not lines, on purpose: the metal
-            // gradient is objectBoundingBox-relative, and a horizontal <line>
-            // has a zero-height box, which collapses the gradient to nothing.
-            out += '<g fill="url(#metal)">' +
-                   '<rect x="362" y="' + dashY + '" width="92" height="8" rx="4"/>' +
-                   '<rect x="482" y="' + dashY + '" width="60" height="8" rx="4"/>' +
-                   '<rect x="570" y="' + dashY + '" width="92" height="8" rx="4"/>' +
-                   '</g>';
-
-            // center text
-            if (o.centerText) {
-                out += '<text x="' + C + '" y="' + centerY + '" text-anchor="middle"' +
-                       ' font-family="' + FONT_SVG + '" font-weight="900" font-size="' + centerSize +
-                       '" letter-spacing="' + (centerSize * 0.02).toFixed(2) + '" fill="url(#metal)">' +
-                       esc(o.centerText) + '</text>';
-            }
-            if (hasSub) {
-                out += '<text x="' + C + '" y="776" text-anchor="middle"' +
-                       ' font-family="' + FONT_SVG + '" font-weight="900" font-size="' + subSize +
-                       '" letter-spacing="' + (subSize * 0.06).toFixed(2) + '" fill="url(#metal)">' +
-                       esc(o.subText) + '</text>';
-            }
-
-            out += '</svg>';
+        // Layout: centre `text` on (CX, slot.cy), shrinking to fit slot.maxW.
+        // Returns per-glyph placements in artwork coordinates.
+        function layoutText(text, slot, spacing) {
+            const chars = text.split('').map(function (ch) {
+                return ch === ' ' ? ' ' : glyphOf(ch);
+            }).filter(Boolean);
+            if (!chars.length) return null;
+            let units = Math.max(0, chars.length - 1) * spacing;
+            chars.forEach(function (ch) { units += widthOf(ch); });
+            const h = Math.min(slot.maxH, slot.maxW / Math.max(units, .01));
+            let x = CX - units * h / 2;
+            const top = slot.cy - h / 2;
+            const out = { h: h, top: top, glyphs: [] };
+            chars.forEach(function (ch) {
+                const w = h * widthOf(ch);
+                if (ch !== ' ') out.glyphs.push({ ch: ch, x: x, w: w });
+                x += w + h * spacing;
+            });
             return out;
         }
 
+        // The four engraving passes: [dx, dy, colourFn, width]. Colours take
+        // the metal palette; 'grad' means the vertical metal gradient.
+        const PASSES = [
+            [.06, .075, function (m) { return 'rgba(0,0,0,.9)'; }, .31],
+            [0, 0, function (m) { return m.stops[2]; }, .29],
+            [0, 0, 'grad', .24],
+            [-.014, -.018, function (m) { return hexA(m.stops[0], .75); }, .065]
+        ];
+        function hexA(c, a) {
+            const v = hex(c);
+            return 'rgba(' + v[0] + ',' + v[1] + ',' + v[2] + ',' + a + ')';
+        }
+
+        function drawTextCanvas(ctx, layout, metal) {
+            if (!layout) return;
+            layout.glyphs.forEach(function (g) {
+                if (!path2d[g.ch]) path2d[g.ch] = new Path2D(GLYPHS[g.ch]);
+                ctx.save();
+                ctx.translate(g.x, layout.top);
+                ctx.scale(g.w, layout.h);
+                ctx.lineCap = 'butt';
+                ctx.lineJoin = 'miter';
+                PASSES.forEach(function (p) {
+                    ctx.save();
+                    ctx.translate(p[0], p[1]);
+                    if (p[2] === 'grad') {
+                        const grad = ctx.createLinearGradient(0, 0, 0, 1);
+                        grad.addColorStop(0, metal.stops[0]);
+                        grad.addColorStop(.32, metal.stops[1]);
+                        grad.addColorStop(.68, metal.stops[2]);
+                        grad.addColorStop(1, metal.stops[3]);
+                        ctx.strokeStyle = grad;
+                    } else {
+                        ctx.strokeStyle = p[2](metal);
+                    }
+                    ctx.lineWidth = p[3];
+                    ctx.stroke(path2d[g.ch]);
+                    ctx.restore();
+                });
+                ctx.restore();
+            });
+        }
+
+        function textSvg(layout, metal) {
+            if (!layout) return '';
+            return layout.glyphs.map(function (g) {
+                const d = GLYPHS[g.ch];
+                const tf = 'translate(' + g.x.toFixed(2) + ' ' + layout.top.toFixed(2) +
+                           ') scale(' + g.w.toFixed(3) + ' ' + layout.h.toFixed(3) + ')';
+                return '<g transform="' + tf + '" fill="none" stroke-linecap="butt" stroke-linejoin="miter">' +
+                    '<path d="' + d + '" transform="translate(.06 .075)" stroke="#000" stroke-opacity=".9" stroke-width=".31"/>' +
+                    '<path d="' + d + '" stroke="' + metal.stops[2] + '" stroke-width=".29"/>' +
+                    '<path d="' + d + '" stroke="url(#engrave)" stroke-width=".24"/>' +
+                    '<path d="' + d + '" transform="translate(-.014 -.018)" stroke="' + metal.stops[0] +
+                        '" stroke-opacity=".75" stroke-width=".065"/>' +
+                    '</g>';
+            }).join('');
+        }
+
+        // ---- composing the badge ----
         function readForm() {
             return {
-                topText:    el.topText.value.trim(),
                 centerText: el.centerText.value.trim(),
                 subText:    el.subText.value.trim(),
-                botText:    el.botText.value.trim(),
                 metal:      el.metalPick.value,
                 body:       el.bodyPick.value,
                 bg:         el.bgPick.value
             };
         }
 
-        // SVG -> data URL. Base64 so unicode in the text survives the trip,
-        // and so the <img> never taints the canvas we draw it into.
-        // Built byte-by-byte in chunks: String.fromCharCode.apply blows the
-        // argument limit on long badges.
-        function svgDataUrl(svg) {
-            const bytes = new TextEncoder().encode(svg);
-            let bin = '';
-            for (let i = 0; i < bytes.length; i += 0x8000) {
-                bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+        function layouts(o) {
+            return {
+                call: o.centerText ? layoutText(o.centerText, SLOT_CALL, .08) : null,
+                sub:  o.subText ? layoutText(o.subText, SLOT_SUB, .1) : null
+            };
+        }
+
+        function drawBadge(ctx, size, o) {
+            const metal = METALS[o.metal] || METALS.silver;
+            const bg = BACKGROUNDS[o.bg] || BACKGROUNDS.none;
+            const s = size / ART_SIZE;
+            ctx.clearRect(0, 0, size, size);
+            ctx.setTransform(s, 0, 0, s, 0, 0);
+            if (bg.color) {
+                ctx.fillStyle = bg.color;
+                ctx.fillRect(0, 0, ART_SIZE, ART_SIZE);
             }
-            return 'data:image/svg+xml;base64,' + btoa(bin);
+            ctx.drawImage(tintedArt(o.metal in METALS ? o.metal : 'silver',
+                                    o.body in BODIES ? o.body : 'black'), 0, 0);
+            const l = layouts(o);
+            drawTextCanvas(ctx, l.call, metal);
+            drawTextCanvas(ctx, l.sub, metal);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
         }
 
-        let currentSvg = '';
+        function buildSvg(o) {
+            const metal = METALS[o.metal] || METALS.silver;
+            const bg = BACKGROUNDS[o.bg] || BACKGROUNDS.none;
+            const art = tintedArt(o.metal in METALS ? o.metal : 'silver',
+                                  o.body in BODIES ? o.body : 'black');
+            const l = layouts(o);
+            return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + ART_SIZE + ' ' + ART_SIZE +
+                '" width="' + ART_SIZE + '" height="' + ART_SIZE + '">' +
+                '<defs><linearGradient id="engrave" x1="0" y1="0" x2="0" y2="1">' +
+                '<stop offset="0" stop-color="' + metal.stops[0] + '"/>' +
+                '<stop offset=".32" stop-color="' + metal.stops[1] + '"/>' +
+                '<stop offset=".68" stop-color="' + metal.stops[2] + '"/>' +
+                '<stop offset="1" stop-color="' + metal.stops[3] + '"/>' +
+                '</linearGradient></defs>' +
+                (bg.color ? '<rect width="' + ART_SIZE + '" height="' + ART_SIZE + '" fill="' + bg.color + '"/>' : '') +
+                '<image width="' + ART_SIZE + '" height="' + ART_SIZE + '" href="' + art.toDataURL('image/png') + '"/>' +
+                textSvg(l.call, metal) + textSvg(l.sub, metal) +
+                '</svg>';
+        }
+
         function render() {
-            currentSvg = buildSvg(readForm());
-            el.previewImg.src = svgDataUrl(currentSvg);
+            if (!artImg) return;
+            drawBadge(el.preview.getContext('2d'), ART_SIZE, readForm());
         }
 
+        // ---- downloads ----
         function slug(s) {
             return (s || 'bkg').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'bkg';
         }
@@ -592,27 +643,20 @@
         }
 
         function downloadPng() {
+            if (!artImg) return;
             const size = parseInt(el.sizePick.value, 10) || 1024;
-            const name = 'bkg-badge-' + slug(el.centerText.value) + '-' + size + '.png';
-            const img = new Image();
-            img.onload = function () {
-                const canvas = document.createElement('canvas');
-                canvas.width = canvas.height = size;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, size, size);
-                canvas.toBlob(function (blob) {
-                    if (blob) saveBlob(blob, name);
-                }, 'image/png');
-            };
-            img.onerror = function () {
-                alert("Couldn't rasterize the badge in this browser. The SVG download still works.");
-            };
-            img.src = svgDataUrl(currentSvg);
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = size;
+            drawBadge(canvas.getContext('2d'), size, readForm());
+            canvas.toBlob(function (blob) {
+                if (blob) saveBlob(blob, 'bkg-badge-' + slug(el.centerText.value) + '-' + size + '.png');
+            }, 'image/png');
         }
 
         function downloadSvg() {
-            const name = 'bkg-badge-' + slug(el.centerText.value) + '.svg';
-            saveBlob(new Blob([currentSvg], { type: 'image/svg+xml;charset=utf-8' }), name);
+            if (!artImg) return;
+            saveBlob(new Blob([buildSvg(readForm())], { type: 'image/svg+xml;charset=utf-8' }),
+                     'bkg-badge-' + slug(el.centerText.value) + '.svg');
         }
 
         // ---- roster autofill (reads the same members.txt the build script writes) ----
@@ -640,7 +684,6 @@
                         if (!picked) return;
                         el.centerText.value = picked.call;
                         el.subText.value = 'BKG #' + picked.num;
-                        el.botText.value = '144.025 MHz';
                         render();
                     });
                 })
@@ -658,10 +701,8 @@
         }
 
         function reset() {
-            el.topText.value = DEFAULTS.topText;
             el.centerText.value = DEFAULTS.centerText;
             el.subText.value = DEFAULTS.subText;
-            el.botText.value = DEFAULTS.botText;
             el.metalPick.value = DEFAULTS.metal;
             el.bodyPick.value = DEFAULTS.body;
             el.bgPick.value = DEFAULTS.bg;
@@ -678,7 +719,7 @@
             fillSelect(el.bodyPick, BODIES, DEFAULTS.body);
             fillSelect(el.bgPick, BACKGROUNDS, DEFAULTS.bg);
 
-            ['topText', 'centerText', 'subText', 'botText'].forEach(function (id) {
+            ['centerText', 'subText'].forEach(function (id) {
                 el[id].addEventListener('input', render);
             });
             ['metalPick', 'bodyPick', 'bgPick'].forEach(function (id) {
@@ -690,12 +731,23 @@
 
             loadRoster();
 
-            // Web fonts don't affect the badge (it uses system faces), but wait
-            // for font settle anyway so the first measure() is accurate.
-            if (document.fonts && document.fonts.ready) {
-                document.fonts.ready.then(render);
-            }
-            render();
+            // The artwork loads once, behind the gate; every metal/body combo
+            // is tinted from it on demand and cached.
+            const img = new Image();
+            img.onload = function () {
+                artImg = img;
+                render();
+            };
+            img.onerror = function () {
+                const ctx = el.preview.getContext('2d');
+                ctx.fillStyle = '#300';
+                ctx.fillRect(0, 0, ART_SIZE, ART_SIZE);
+                ctx.fillStyle = '#FFD700';
+                ctx.font = '48px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('artwork failed to load — reload?', ART_SIZE / 2, ART_SIZE / 2);
+            };
+            img.src = ART_SRC;
         };
     })();
     </script>

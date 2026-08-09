@@ -423,6 +423,12 @@ body {
     color: var(--lime);
     border: 3px inset #444;
 }
+.form-row input:disabled {
+    color: #6d6d52;
+    border-style: solid;
+    opacity: 0.75;
+    cursor: not-allowed;
+}
 .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
     outline: none;
     border-color: var(--brass-light);
@@ -612,19 +618,12 @@ body {
     padding: 14px;
     margin-bottom: 14px;
 }
-.preview-frame img {
+.preview-frame img,
+.preview-frame canvas {
     display: block;
     width: 100%;
     height: auto;
     aspect-ratio: 1 / 1;
-}
-/* Off-screen text ruler — must stay laid out (not display:none) for
-   getComputedTextLength() to return real numbers. */
-.text-ruler {
-    position: absolute;
-    left: -99999px;
-    top: 0;
-    pointer-events: none;
 }
 .preview-actions {
     display: flex;
