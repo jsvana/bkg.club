@@ -59,7 +59,6 @@ the server and the lil'-homie onboarding, linked from the nav on all three
 pages, the marquee, the profile action links, and the footer.
 
 The invite URL lives in exactly one place: the `discord-btn` link in
-`index.html`'s Discord section, currently `https://discord.gg/REPLACE-ME`.
-Generate a permanent invite in Discord (**Invite People → Edit invite link →
-Expire after: Never, Max number of uses: No limit**) and replace `REPLACE-ME`
-with the real code — there's an HTML comment marking the spot.
+`index.html`'s Discord section — `https://discord.gg/dfVDUHM3Vg`, a permanent
+invite (never expires, unlimited uses). If the invite is ever regenerated,
+that link is the only spot to update — there's an HTML comment marking it.
