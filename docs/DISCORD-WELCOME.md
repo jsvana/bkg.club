@@ -1,7 +1,7 @@
 # Discord Welcome Message (Carl-bot)
 
 Carl-bot greets each new Discord member and auto-assigns them the
-**lil' homies** role. They stay a lil' homie until an officer verifies two
+**lil' homie** role. They stay a lil' homie until an officer verifies two
 things: (1) their nickname is set correctly, and (2) they've been jumped in
 (the 2-meter CW initiation QSO). This doc holds the paste-ready welcome
 message so the copy doesn't live only inside the Carl-bot dashboard.
@@ -18,7 +18,7 @@ the server name).
 
 🤜 WELCOME 2 {server}, {user}!!! 🤜
 
-U just got rolled in2 the **lil' homies** role — every new homie starts here while the officers process ur intake!! (We're a law-abiding, FCC-respectin' gang, but rules is rules!! 🚨)
+U just got rolled in2 the **lil' homie** role — every new homie starts here while the officers process ur intake!! (We're a law-abiding, FCC-respectin' gang, but rules is rules!! 🚨)
 
 **HOW 2 GET PATCHED IN2 THE FULL GANG:**
 
@@ -49,4 +49,17 @@ QRL? QRL? ...freq's all urs, homie!!
   (e.g. `Justin | N9HO | #32 | AL OG`). Anyone who isn't a state OG has
   **nothing** after the number.
 - The role assignment itself is separate from the welcome message: Carl-bot
-  dashboard → **Autoroles** → add *lil' homies* as the role granted on join.
+  dashboard → **Autoroles** → add *lil' homie* as the role granted on join.
+  (Already configured and live.)
+
+## Site integration
+
+The homepage has a **DA CLUBHOUSE** section (`index.html#discord`) explaining
+the server and the lil'-homie onboarding, linked from the nav on all three
+pages, the marquee, the profile action links, and the footer.
+
+The invite URL lives in exactly one place: the `discord-btn` link in
+`index.html`'s Discord section, currently `https://discord.gg/REPLACE-ME`.
+Generate a permanent invite in Discord (**Invite People → Edit invite link →
+Expire after: Never, Max number of uses: No limit**) and replace `REPLACE-ME`
+with the real code — there's an HTML comment marking the spot.
