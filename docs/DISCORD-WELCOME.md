@@ -1,10 +1,11 @@
 # Discord Welcome Message (Carl-bot)
 
 Carl-bot greets each new Discord member and auto-assigns them the
-**lil' homie** role. They stay a lil' homie until an officer verifies two
-things: (1) their nickname is set correctly, and (2) they've been jumped in
-(the 2-meter CW initiation QSO). This doc holds the paste-ready welcome
-message so the copy doesn't live only inside the Carl-bot dashboard.
+**lil' homie** role. New homies stay **on the corner** (the welcome channel)
+until an officer verifies two things: (1) their nickname is set correctly,
+and (2) they've been jumped in (the 2-meter CW initiation QSO). The server
+itself is **the block**. This doc holds the paste-ready welcome message so
+the copy doesn't live only inside the Carl-bot dashboard.
 
 ## The message
 
@@ -18,7 +19,7 @@ the server name).
 
 🤜 WELCOME 2 {server}, {user}!!! 🤜
 
-U just got rolled in2 the **lil' homie** role — every new homie starts here while the officers process ur intake!! (We're a law-abiding, FCC-respectin' gang, but rules is rules!! 🚨)
+U just got rolled in2 the **lil' homie** role — every new homie holds down the corner while the officers process ur intake!! (We're a law-abiding, FCC-respectin' gang, but rules is rules!! 🚨)
 
 **HOW 2 GET PATCHED IN2 THE FULL GANG:**
 
@@ -26,7 +27,7 @@ U just got rolled in2 the **lil' homie** role — every new homie starts here wh
 
 2️⃣ **GET JUMPED IN!!** Initiation = one **2-meter CW QSO** with a BKG member!! Already took ur licks & got ur BKG #? Tell an officer!! Not yet? Holler in the chat & we'll line up ur jump-in — bring ur key, leave ur fists at home!! 🤜📻
 
-Once an officer verifies both, u get patched up from lil' homie 2 FULL BRASS POUNDER!! ✨
+Once an officer verifies both, u get called up off the corner — lil' homie 2 FULL BRASS POUNDER, free 2 roam the whole block!! ✨
 
 Til then: lurk, ask questions, & ALWAYS send a proper Roger!!
 
@@ -54,7 +55,7 @@ QRL? QRL? ...freq's all urs, homie!!
 
 ## Site integration
 
-The homepage has a **DA CLUBHOUSE** section (`index.html#discord`) explaining
+The homepage has a **THE BLOCK** section (`index.html#discord`) explaining
 the server and the lil'-homie onboarding, linked from the nav on all three
 pages, the marquee, the profile action links, and the footer.
 
