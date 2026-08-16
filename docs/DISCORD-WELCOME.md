@@ -22,7 +22,7 @@ U just got rolled in2 the **lil' homies** role — every new homie starts here w
 
 **HOW 2 GET PATCHED IN2 THE FULL GANG:**
 
-1️⃣ **SET UR NAME STRAIGHT!!** Server nickname = `Name | Callsign | #BKG` (like `Justin | N9HO | #32`) so the gang knows who's poundin!! State OG? Tack on ur state — `Justin | N9HO | #32 | AL OG`!! Not a state OG? Then NOTHIN goes after ur number!! 🚨
+1️⃣ **SET UR NAME STRAIGHT!!** Server nickname = `First Name | Callsign | #BKG` (like `Justin | N9HO | #32`) — first name ONLY, save the full govt name 4 the FCC!! State OG? Tack on ur state — `Justin | N9HO | #32 | AL OG`!! Not a state OG? NOTHIN goes after ur number!! 🚨
 
 2️⃣ **GET JUMPED IN!!** Initiation = one **2-meter CW QSO** with a BKG member!! Already took ur licks & got ur BKG #? Tell an officer!! Not yet? Holler in the chat & we'll line up ur jump-in — bring ur key, leave ur fists at home!! 🤜📻
 
@@ -43,11 +43,10 @@ QRL? QRL? ...freq's all urs, homie!!
   ping), `{membercount}`.
 - The message is ~1.3k characters — comfortably under Discord's 2000-char
   limit, so there's room to tweak.
-- The nickname format is exact: `Name | Callsign | #BKG`
-  (e.g. `Justin | N9HO | #32`). State OGs — and only state OGs — append
-  `| <state abbreviation> OG` (e.g. `Justin | N9HO | #32 | AL OG`). Anyone
-  who isn't a state OG has **nothing** after the number.
-- Discord nicknames cap at 32 characters, so a long name may need the
-  roster-style squeeze (first name + last initial) to fit.
+- The nickname format is exact: `First Name | Callsign | #BKG`
+  (e.g. `Justin | N9HO | #32`) — first name only, no last name. State OGs —
+  and only state OGs — append `| <state abbreviation> OG`
+  (e.g. `Justin | N9HO | #32 | AL OG`). Anyone who isn't a state OG has
+  **nothing** after the number.
 - The role assignment itself is separate from the welcome message: Carl-bot
   dashboard → **Autoroles** → add *lil' homies* as the role granted on join.
