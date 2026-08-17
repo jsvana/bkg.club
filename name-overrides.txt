@@ -19,3 +19,4 @@
 # members.txt on the next build (scripts/build-roster.py).
 
 KD2MZH = QRS Forrest
+KI6SYD = Max P
