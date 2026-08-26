@@ -434,16 +434,25 @@
                     night instead of a lecture.
                 </p>
                 <p>
-                    The <strong>Quansheng UV-K5</strong> is an inexpensive Chinese handheld — call it twenty-five to
-                    thirty-five dollars depending on the week and the seller. Out of the box it is an FM
+                    The <strong>Quansheng UV-K1</strong> is an inexpensive Chinese handheld — call it thirty
+                    dollars, give or take, depending on the week and the seller. Out of the box it is an FM
                     handheld and it will not send CW at all.
                 </p>
                 <p>
-                    <strong>NR7Y</strong> wrote firmware that changes that. It is built on the open-source UV-K5
-                    firmware lineage — egzumer's custom firmware, itself a merge of work by OneOfEleven and
-                    fagci — and it turns the radio into a genuine CW transceiver. Not a tone whistled into an
-                    FM microphone: <em>real carrier keying</em>, with transmit and receive switching fast enough
-                    to send and hear properly in real time.
+                    We point clubs at the K1 specifically, and the reason is <strong>predictability</strong>. The
+                    older UV-K5 shipped in several hardware revisions that are difficult to tell apart before
+                    you buy, and which firmware you need depends on which one turns up in the box. The K1 is
+                    one known target. Order five radios, get five identical radios, and the same instructions
+                    work on all of them — which matters enormously when you are standing in front of a room
+                    of people holding soldering irons.
+                </p>
+                <p>
+                    <strong>NR7Y</strong> wrote the CW firmware that changes what the radio can do. On the K1 it
+                    builds on F4HWN's Fusion codebase — which descends from egzumer's custom firmware and,
+                    before that, DualTachyon's original open-source work — and it turns the radio into a
+                    genuine CW transceiver. Not a tone whistled into an FM microphone: <em>real carrier
+                    keying</em>, with transmit and receive switching fast enough to send and hear properly in
+                    real time.
                 </p>
 
                 <div class="club-h4">What you get</div>
@@ -457,14 +466,17 @@
                     <dt>Sidetone</dt>
                     <dd>Adjustable sidetone volume, including off, for the people who prefer to suffer.</dd>
 
-                    <dt>Paddle input</dt>
-                    <dd>Two routes. A resistor-network cable into the radio's jack means <em>no soldering inside the case at all</em>. Or do the internal rework, rewire tip and ring, and plug a standard paddle straight in.</dd>
+                    <dt>The modification</dt>
+                    <dd>Two resistors come off the board, two jumpers go on, and the custom firmware goes in. That is the entire job. A standard paddle then plugs straight into the radio — no adapter, no special cable, nothing to lose in a go-bag.</dd>
+
+                    <dt>Messages</dt>
+                    <dd>Record macro messages by keying them in, then play them back — your call, your exchange, a CQ you do not have to send by hand forty times during an activation.</dd>
+
+                    <dt>Code practice</dt>
+                    <dd>A built-in practice mode that does not transmit, so a new operator learns on the same radio they will later use on the air. It will even send with the flashlight LED.</dd>
 
                     <dt>Flashing</dt>
-                    <dd>Ordinary firmware update over the programming cable: power the radio off, hold the PTT, power it back on to enter the bootloader, then flash. No programmer, no chip clip, no drama.</dd>
-
-                    <dt>Reversible</dt>
-                    <dd>Stock firmware goes back on the same way it came off. Save a copy of what you started with before you begin, exactly as you would with anything else you flash.</dd>
+                    <dd>Prebuilt firmware files are published with every release — nothing to compile and no toolchain to install. Follow the current steps in the documentation, and back up the radio's calibration data with uvtools2 once you are done.</dd>
                 </dl>
 
                 <div class="club-tradeoff">
@@ -478,18 +490,19 @@
                         </ul>
                     </div>
                     <div class="club-tradeoff-col is-loss">
-                        <div class="club-tradeoff-head">⚠ What you give up</div>
+                        <div class="club-tradeoff-head">⚠ What to know going in</div>
                         <ul>
-                            <li>Room had to come from somewhere: FM broadcast receive, DTMF dialing and contacts, VOX, NOAA weather and AirCopy are removed.</li>
-                            <li>In some port configurations, serial communication — including CHIRP programming — will not work. Flashing still does.</li>
-                            <li>Check the documentation for exactly which radio variants are currently supported before you buy in bulk.</li>
+                            <li>The author's own warning, and it is a fair one: this mod changes the radio's hardware behavior in significant ways, with no guarantee against damaging it. Use at your own risk.</li>
+                            <li>Back up the calibration data with uvtools2 right after flashing. Cheap insurance, good habit.</li>
+                            <li>CHIRP needs the dedicated driver that ships alongside each firmware release. Download them together and save yourself the phone call.</li>
+                            <li>Buy the K1, not the original UV-K5. This firmware does not run on the older radio, and that is the mistake most likely to cost a club an evening.</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="club-linkrow">
                     <a class="club-linkbtn" href="https://briand.github.io/cw-firmware-docs/" target="_blank" rel="noopener">📖 NR7Y CW FIRMWARE DOCS</a>
-                    <a class="club-linkbtn" href="https://github.com/briand/uv-k5-firmware-custom-cw" target="_blank" rel="noopener">💾 SOURCE ON GITHUB</a>
+                    <a class="club-linkbtn" href="https://github.com/briand/uv-k1-k5v3-firmware-custom" target="_blank" rel="noopener">💾 SOURCE + RELEASES ON GITHUB</a>
                 </div>
 
                 <div class="club-callout">
@@ -525,7 +538,7 @@
                         <div class="club-step-title">BUY THREE RADIOS, NOT THIRTY</div>
                         <div class="club-prose">
                             <p>
-                                Start small enough that failure is boring. Three UV-K5s and a programming cable
+                                Start small enough that failure is boring. Three UV-K1s and a programming cable
                                 is a rounding error in most club treasuries, and it is enough to prove the idea
                                 or kill it.
                             </p>
@@ -549,13 +562,14 @@
 
                 <div class="club-step">
                     <div>
-                        <div class="club-step-title">ADD A KEY, BOTH WAYS</div>
+                        <div class="club-step-title">TWO RESISTORS OFF, TWO JUMPERS ON</div>
                         <div class="club-prose">
                             <p>
-                                Do the no-solder resistor cable on one radio and the internal rework on another,
-                                then compare them side by side. The cautious members get a path in, the ones who
-                                have been itching to open the case get to open the case, and everybody learns
-                                something from the other group's radio.
+                                The hardware modification is genuinely small: lift two resistors off the board,
+                                add two jumpers, and the key input is live. Put the steadiest hands on the iron
+                                for the first one and let everybody else crowd around and watch before they try
+                                their own. This is the part the evening is actually about — somebody changing a
+                                circuit rather than a setting, probably for the first time.
                             </p>
                         </div>
                     </div>
