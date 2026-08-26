@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BKG for Clubs: Tinkering &amp; 2m CW Growth</title>
+    <meta name="description" content="The Brass Knuckle Gang, explained for ham clubs: one goal (grow 2-meter CW), three second-order effects, and the NR7Y firmware that turns a $30 handheld into a CW rig.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%231a0a00' stroke='%23D4AF37' stroke-width='2'/%3E%3Crect x='5' y='20' width='22' height='6' rx='2' fill='%23D4AF37'/%3E%3Crect x='5' y='16' width='22' height='5' fill='%23D4AF37'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/bkg.css">
+    <style>
+        /* ============================================================
+           CLUBS PAGE (clubs.html)
+           ------------------------------------------------------------
+           This is the page a club officer forwards to a board, so the
+           body copy runs in a readable serif instead of the Comic Sans
+           the rest of the site uses. The BKG chrome stays (header,
+           marquee, floating knuckles) because we are still the BKG.
+           ============================================================ */
+
+        .club-prose {
+            font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+            font-size: 1.02rem;
+            line-height: 1.75;
+            color: #dcdcdc;
+        }
+        .club-prose p { margin-bottom: 15px; }
+        .club-prose p:last-child { margin-bottom: 0; }
+        .club-prose em { color: #fff; }
+        .club-prose strong { color: var(--brass-light); }
+        .club-prose a { color: var(--brass-light); }
+
+        /* Letterhead panel: the "we cleaned up for company" container */
+        .club-panel {
+            background: linear-gradient(135deg, #161616 0%, #080808 100%);
+            border: 4px ridge var(--brass);
+            padding: 26px 28px;
+            margin-bottom: 26px;
+            position: relative;
+        }
+        .club-panel-label {
+            position: absolute;
+            top: -13px;
+            left: 18px;
+            background: var(--brass);
+            color: #000;
+            font-family: 'Special Elite', monospace;
+            font-size: 0.68rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 2px 10px;
+            border: 2px solid #000;
+        }
+        .club-lead { font-size: 1.12rem; }
+
+        .club-h3 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.75rem;
+            letter-spacing: 1px;
+            color: var(--brass);
+            text-shadow: 2px 2px 0 var(--blood-red), -1px -1px 0 #000;
+            margin-bottom: 12px;
+        }
+        .club-h4 {
+            font-family: 'Special Elite', monospace;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--lime);
+            margin: 22px 0 8px;
+        }
+
+        /* The one-goal statement */
+        .club-mission {
+            background: linear-gradient(135deg, #2a1a00 0%, #0a0500 100%);
+            border: 4px ridge var(--brass-light);
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.25);
+            padding: 26px 28px;
+            margin-bottom: 26px;
+            text-align: center;
+        }
+        .club-mission-kicker {
+            font-family: 'Special Elite', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--lime);
+            margin-bottom: 10px;
+        }
+        .club-mission-statement {
+            font-family: 'Bangers', cursive;
+            font-size: 2.3rem;
+            line-height: 1.15;
+            color: var(--brass-light);
+            text-shadow: 3px 3px 0 var(--blood-red), -1px -1px 0 #000;
+            margin-bottom: 14px;
+        }
+
+        /* Three second-order effects */
+        .club-effects {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 26px;
+        }
+        .club-effect {
+            background: linear-gradient(135deg, #161616 0%, #080808 100%);
+            border: 3px ridge var(--brass);
+            padding: 18px;
+            position: relative;
+        }
+        .club-effect-num {
+            font-family: 'Bangers', cursive;
+            font-size: 2.4rem;
+            line-height: 1;
+            color: var(--blood-red);
+            text-shadow: 2px 2px 0 var(--brass-dark);
+        }
+        .club-effect-title {
+            font-family: 'Bangers', cursive;
+            font-size: 1.35rem;
+            letter-spacing: 1px;
+            color: var(--brass-light);
+            margin: 4px 0 10px;
+        }
+        .club-effect .club-prose { font-size: 0.94rem; line-height: 1.65; }
+
+        /* Firmware spec sheet */
+        .club-spec {
+            display: grid;
+            grid-template-columns: minmax(140px, auto) 1fr;
+            gap: 8px 18px;
+            font-family: 'Special Elite', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin: 6px 0 4px;
+        }
+        .club-spec dt {
+            color: var(--brass);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            padding-top: 2px;
+        }
+        .club-spec dd { color: #ccc; margin: 0; }
+
+        /* Gain / give-up columns */
+        .club-tradeoff {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 18px 0 4px;
+        }
+        .club-tradeoff-col {
+            border: 2px dashed var(--brass-dark);
+            padding: 14px 16px;
+        }
+        .club-tradeoff-col.is-loss { border-color: #5a2b2b; }
+        .club-tradeoff-head {
+            font-family: 'Special Elite', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--lime);
+            margin-bottom: 8px;
+        }
+        .club-tradeoff-col.is-loss .club-tradeoff-head { color: #ff8a8a; }
+        .club-tradeoff ul { margin: 0; padding-left: 18px; }
+        .club-tradeoff li {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            color: #ccc;
+            margin-bottom: 5px;
+        }
+        .club-tradeoff li::marker { color: var(--brass); }
+
+        /* Club playbook steps */
+        .club-steps { counter-reset: clubstep; }
+        .club-step {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            padding: 14px 0;
+            border-bottom: 1px dashed rgba(212, 175, 55, 0.25);
+        }
+        .club-step:last-child { border-bottom: none; padding-bottom: 0; }
+        .club-step::before {
+            counter-increment: clubstep;
+            content: counter(clubstep);
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            color: var(--brass-light);
+            background: linear-gradient(180deg, var(--blood-red) 0%, #5a0000 100%);
+            border: 3px outset var(--brass);
+            text-shadow: 1px 1px 0 #000;
+        }
+        .club-step-title {
+            font-family: 'Bangers', cursive;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            color: var(--brass-light);
+            margin-bottom: 4px;
+        }
+        .club-step .club-prose { font-size: 0.95rem; line-height: 1.65; }
+
+
+        /* Caveats / fine print */
+        .club-callout {
+            background: #000;
+            border: 2px solid var(--brass-dark);
+            border-left: 6px solid var(--brass);
+            padding: 16px 18px;
+            margin: 20px 0 0;
+        }
+        .club-callout .club-prose { font-size: 0.92rem; line-height: 1.65; color: #bbb; }
+
+        .club-linkrow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .club-linkbtn {
+            font-family: 'Special Elite', monospace;
+            font-size: 0.82rem;
+            color: var(--brass-light);
+            background: #111;
+            border: 3px outset var(--brass-dark);
+            padding: 8px 14px;
+            text-decoration: none;
+        }
+        .club-linkbtn:hover { box-shadow: 0 0 12px rgba(212, 175, 55, 0.4); color: #fff; }
+
+        .club-cta { text-align: center; margin: 30px 0 10px; }
+        .club-cta-btn {
+            display: inline-block;
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            color: var(--brass-light);
+            background: linear-gradient(180deg, var(--blood-red) 0%, #5a0000 100%);
+            border: 4px outset var(--brass);
+            padding: 10px 28px;
+            text-decoration: none;
+            text-shadow: 2px 2px 0 #000;
+        }
+        .club-cta-btn:hover { box-shadow: 0 0 25px var(--brass); }
+        .club-cta-sub {
+            font-family: 'Special Elite', monospace;
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 12px;
+        }
+        .club-cta-sub a { color: var(--brass-light); }
+
+        .club-signoff {
+            text-align: center;
+            font-family: 'Special Elite', monospace;
+            font-size: 0.85rem;
+            color: var(--brass);
+            margin-top: 26px;
+        }
+
+        @media (max-width: 780px) {
+            .club-effects { grid-template-columns: 1fr; }
+            .club-tradeoff { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .club-panel { padding: 22px 18px; }
+            .club-mission { padding: 22px 18px; }
+            .club-mission-statement { font-size: 1.7rem; }
+            .club-spec { grid-template-columns: 1fr; gap: 2px 0; }
+            .club-spec dd { margin-bottom: 8px; }
+            .club-prose { font-size: 0.98rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="tiled-bg"></div>
+    <div class="grunge-overlay"></div>
+    <div class="floating-knuckle">🤜</div>
+    <div class="floating-knuckle">🤛</div>
+    <div class="floating-knuckle">🤜</div>
+    <div class="floating-knuckle">🤛</div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-area">
+                <div>
+                    <a href="index.html" class="logo-text"><span>BKG</span>.club</a>
+                    <div class="tagline">Get ur brass on the air!! ✨</div>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html#home">HOME</a> |
+                <a href="index.html#bylaws">BYLAWS</a> |
+                <a href="index.html#join">JOIN</a> |
+                <a href="index.html#roster">ROSTER</a> |
+                <a href="index.html#map">MAP</a> |
+                <a href="tree.html">DOWNLINE</a> |
+                <a href="recruit.html">RECRUIT</a> |
+                <a href="clubs.html" class="active">CLUBS</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="marquee-container">
+        <div class="marquee-text">
+            ★彡 FOR CLUBS: ONE GOAL, THREE SIDE EFFECTS, AND A THIRTY-DOLLAR RADIO. 彡★ THE BAND IS EMPTY. THE SOLDERING IRON IS RIGHT THERE. 彡★ BRING IT HOME TO YOUR LOCAL CLUB. 彡★ 2 METER CW OR BUST. 彡★
+        </div>
+    </div>
+
+    <main class="main-wrapper">
+        <a href="index.html" class="back-link">⟵ BACK 2 HQ</a>
+
+        <h2 class="section-title">BKG FOR CLUBS</h2>
+        <div class="section-subtitle">📻 The pitch you can read out loud at a board meeting 📻</div>
+
+        <!-- ============ INTRO: why this page reads differently ============ -->
+        <div class="club-panel">
+            <div class="club-panel-label">A note on the register</div>
+            <div class="club-prose">
+                <p class="club-lead">
+                    This page is spelled correctly. That is the only concession we are making.
+                </p>
+                <p>
+                    The rest of bkg.club is written the way we talk on the air at two in the morning, but
+                    <em>"get ur brass on the air!!"</em> does not survive a board meeting. So here is the gang in
+                    plain language, and what it costs to find out: about thirty dollars, less than your club spends
+                    on coffee.
+                </p>
+            </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- ============ THE ONE GOAL ============ -->
+        <div class="club-mission">
+            <div class="club-mission-kicker">The number one goal</div>
+            <div class="club-mission-statement">GROW 2-METER CW</div>
+            <div class="club-prose" style="max-width:640px;margin:0 auto;">
+                <p>
+                    Not "grow the club," not "sell shirts," not "win anything." More operators on 144 MHz
+                    sending Morse code than there were last year.
+                </p>
+                <p>
+                    Everything else here is a <strong>second-order effect</strong>, and those are why your club
+                    should care.
+                </p>
+            </div>
+        </div>
+
+        <!-- ============ THE THREE EFFECTS ============ -->
+        <h3 class="club-h3" style="text-align:center;">⚡ THE THREE SECOND-ORDER EFFECTS ⚡</h3>
+
+        <div class="club-effects">
+            <div class="club-effect">
+                <div class="club-effect-num">01</div>
+                <div class="club-effect-title">THE BAND GETS USED</div>
+                <div class="club-prose">
+                    <p>
+                        Outside a few repeaters and a net or two, two meters goes days without a signal. The
+                        weak-signal end goes weeks.
+                    </p>
+                    <p>
+                        An active band is far easier to defend than an empty one. Every contact is evidence, and it
+                        costs you an evening.
+                    </p>
+                </div>
+            </div>
+
+            <div class="club-effect">
+                <div class="club-effect-num">02</div>
+                <div class="club-effect-title">PEOPLE START TINKERING AGAIN</div>
+                <div class="club-prose">
+                    <p>
+                        The barrier is fear, not skill. Nobody's first soldering job belongs inside a
+                        thirteen-hundred-dollar HF rig, so the iron stays in the drawer and the hobby becomes shopping.
+                    </p>
+                    <p>
+                        Nobody's hands shake over a <strong>thirty-dollar handheld</strong>. When the worst case is
+                        ordering another, people try things, and people who try things build things.
+                    </p>
+                </div>
+            </div>
+
+            <div class="club-effect">
+                <div class="club-effect-num">03</div>
+                <div class="club-effect-title">IT DRAGS YOU BACK TO YOUR LOCAL CLUB</div>
+                <div class="club-prose">
+                    <p>
+                        With a handheld and a modest antenna, 2-meter CW is a <em>local</em> mode. Your contacts are
+                        not strangers a thousand miles away. They are people close enough to have breakfast with.
+                    </p>
+                    <p>
+                        So you <strong>cannot grow in this gang without meeting the hams around you</strong>: back to
+                        your local club, talk friends into modifying a radio, get on the air together. The recruiting
+                        mechanism is, by physics, community building.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- ============ THE HARDWARE ============ -->
+        <div class="club-panel">
+            <div class="club-panel-label">The hardware</div>
+            <h3 class="club-h3">THE NR7Y MODS AND FIRMWARE</h3>
+            <div class="club-prose">
+                <p class="club-lead">
+                    This is what lets a club run a build night instead of a lecture.
+                </p>
+                <p>
+                    The <strong>Quansheng UV-K1</strong> is a thirty-dollar handheld that, out of the box, will
+                    not send CW at all.
+                </p>
+                <p>
+                    We point clubs at the K1 for one reason: <strong>predictability</strong>. The older UV-K5
+                    shipped in several revisions that are hard to tell apart before you buy, each needing different
+                    firmware. The K1 is one known target: order five radios, get five identical radios. That matters
+                    in a room full of soldering irons.
+                </p>
+                <p>
+                    <strong>NR7Y</strong> wrote the CW firmware. On the K1 it builds on F4HWN's Fusion codebase,
+                    which descends from egzumer's and DualTachyon's original open-source work. It makes the radio a
+                    real CW transceiver: actual carrier keying, not a tone whistled into an FM microphone.
+                </p>
+
+                <div class="club-h4">What you get</div>
+                <dl class="club-spec">
+                    <dt>Keying</dt>
+                    <dd>
+                        High-speed RX/TX switching, fast enough to send and hear in real time.
+                    </dd>
+
+                    <dt>Keyer</dt>
+                    <dd>
+                        Automatic iambic keyer (modes A, B, Ultimatic and Bug) with adjustable speed in WPM.
+                    </dd>
+
+                    <dt>Sidetone</dt>
+                    <dd>
+                        Adjustable sidetone volume, including off, for those who prefer to suffer.
+                    </dd>
+
+                    <dt>The modification</dt>
+                    <dd>
+                        Two resistors off, two jumpers on, custom firmware in. A standard paddle then plugs straight
+                        in: no adapter, no special cable.
+                    </dd>
+
+                    <dt>Messages</dt>
+                    <dd>
+                        Record messages by keying them in, then play them back: your call, your exchange, a CQ you
+                        do not send by hand forty times an activation.
+                    </dd>
+
+                    <dt>Code practice</dt>
+                    <dd>
+                        A non-transmitting practice mode, so a new operator learns on the radio they will use on the air. It will even
+                        send with the flashlight LED.
+                    </dd>
+
+                    <dt>Flashing</dt>
+                    <dd>
+                        Prebuilt files with every release, nothing to compile.
+                        <a href="https://armel.github.io/uvtools2/" target="_blank" rel="noopener">uvtools2</a>
+                        is the easiest way to get them onto the radio.
+                    </dd>
+                </dl>
+
+                <div class="club-tradeoff">
+                    <div class="club-tradeoff-col">
+                        <div class="club-tradeoff-head">🤜 What the club gains</div>
+                        <ul>
+                            <li>A working 2m CW rig for the price of a large pizza.</li>
+                            <li>
+                                A build night that ends with something that works.
+                            </li>
+                            <li>An excuse to teach flashing, keying and antennas in one evening.</li>
+                            <li>Members who have opened a radio and lived to tell about it.</li>
+                        </ul>
+                    </div>
+                    <div class="club-tradeoff-col is-loss">
+                        <div class="club-tradeoff-head">⚠ What to know going in</div>
+                        <ul>
+                            <li>
+                                The author's own warning: the mod changes hardware behavior significantly, with no guarantee
+                                against damage. Use at your own risk.
+                            </li>
+                            <li>
+                                Back up the radio's calibration data with uvtools2 right after flashing.
+                            </li>
+                            <li>
+                                CHIRP needs the dedicated driver that ships with each release. Download them together.
+                            </li>
+                            <li>
+                                Buy the K1, not the original UV-K5: this firmware does not run on the older radio.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="club-linkrow">
+                    <a class="club-linkbtn" href="https://briand.github.io/cw-firmware-docs/" target="_blank" rel="noopener">📖 NR7Y CW FIRMWARE DOCS</a>
+                    <a class="club-linkbtn" href="https://github.com/briand/uv-k1-k5v3-firmware-custom" target="_blank" rel="noopener">💾 SOURCE + RELEASES ON GITHUB</a>
+                    <a class="club-linkbtn" href="https://armel.github.io/uvtools2/" target="_blank" rel="noopener">🔧 FLASH IT WITH UVTOOLS2</a>
+                </div>
+
+                <div class="club-callout">
+                    <div class="club-prose">
+                        <p>
+                            <strong>The honest version:</strong> this is a modified cheap radio, not a weak-signal
+                            station, and it behaves like one. That is the point. Nobody learns from equipment they are afraid
+                            to open, and if a member destroys one, the club is out thirty dollars and up one member who has
+                            seen the inside of a radio.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- ============ THE CLUB PLAYBOOK ============ -->
+        <div class="club-panel">
+            <div class="club-panel-label">The playbook</div>
+            <h3 class="club-h3">RUNNING THIS AT YOUR CLUB</h3>
+            <div class="club-prose">
+                <p>
+                    No committee, no budget line, no vote. One evening and about a hundred dollars: three
+                    radios and a spare.
+                </p>
+            </div>
+
+            <div class="club-steps">
+                <div class="club-step">
+                    <div>
+                        <div class="club-step-title">BUY THREE RADIOS, NOT THIRTY</div>
+                        <div class="club-prose">
+                            <p>
+                                Start small enough that failure is boring. Three UV-K1s and a cable is a rounding error in
+                                most treasuries, and enough to prove the idea or kill it.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="club-step">
+                    <div>
+                        <div class="club-step-title">HOLD A FLASHING NIGHT</div>
+                        <div class="club-prose">
+                            <p>
+                                One laptop, one cable, an hour. Recruit the members who have never flashed anything. They
+                                are the audience. Watching someone's face when their handheld reboots into something they changed
+                                is the actual product.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="club-step">
+                    <div>
+                        <div class="club-step-title">TWO RESISTORS OFF, TWO JUMPERS ON</div>
+                        <div class="club-prose">
+                            <p>
+                                Lift two resistors, add two jumpers, and the key input is live. Steadiest hands on the first
+                                one, everyone else crowded around. This is what the evening is about: somebody changing a circuit
+                                rather than a setting, probably for the first time.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="club-step">
+                    <div>
+                        <div class="club-step-title">GET ON THE AIR LOCALLY, AND GO SLOWLY</div>
+                        <div class="club-prose">
+                            <p>
+                                Pick a night, put the club on <strong>144.025</strong>, and run it slow enough for the
+                                newest operator. <strong>QRS is a feature, not an apology</strong>: 5 WPM counts as much as 25.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="club-step">
+                    <div>
+                        <div class="club-step-title">SPONSOR THE NEW ONES IN</div>
+                        <div class="club-prose">
+                            <p>
+                                Work a non-member on 2m CW and that is a recruit. Confirm they want in, then
+                                <a href="recruit.html">send in the contact</a>. They get a BKG number and appear on
+                                <a href="tree.html">the downline</a> under whoever pounded them in. Clubs turn that into a
+                                leaderboard. We are not going to stop you.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ FINE PRINT ============ -->
+        <div class="club-panel">
+            <div class="club-panel-label">The fine print</div>
+            <h3 class="club-h3">THE GROWN-UP PARAGRAPH</h3>
+            <div class="club-prose">
+                <p>
+                    We describe ourselves as a law-abiding, FCC-respecting gang, and we mean the second part
+                    as sincerely as we mean the first.
+                </p>
+                <p>
+                    <strong>Operate inside your privileges and your band plan.</strong> The gang calls on
+                    <strong>144.025 MHz</strong>, at the CW and weak-signal end of 2 meters. That end is shared with
+                    EME, so the courtesies matter: listen first, send <em>QRL?</em> (Bylaw III, and this is what it
+                    was written for), and move if somebody is working. Outside the United States, check your national
+                    band plan.
+                </p>
+                <p>
+                    <strong>Modifying a radio is your call and your consequence.</strong> The mod is well-trodden
+                    and the radios are cheap, but you own the outcome, warranty and certification included. Modify
+                    your own radio, or one whose owner is standing next to you saying yes.
+                </p>
+                <p>
+                    <strong>Membership is voluntary, every time.</strong> Confirm someone wants in before you
+                    submit them. A surprise membership is not a gift; it is paperwork.
+                </p>
+            </div>
+        </div>
+
+        <div class="club-cta">
+            <a href="recruit.html" class="club-cta-btn">🤜 BRING IT HOME TO YOUR CLUB 🤜</a>
+            <div class="club-cta-sub">
+                Want a member to visit your club net? Work any of us on 2m CW (we call on
+                <strong style="color:var(--brass-light);">144.025</strong>), or start with
+                <a href="index.html#roster">the roster</a> and <a href="index.html#join">how to join</a>.
+            </div>
+        </div>
+
+        <div class="club-signoff">
+            The band is empty, the radios are thirty dollars, and the soldering iron is right there.<br>
+            73 de BKG 🤜📡
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-text">© 2025 BRASS KNUCKLE GANG | All Rights Reserved | 73 de BKG 🤜</div>
+        <div class="footer-links">
+            <a href="index.html#join">JOIN US!!</a>
+            <a href="tree.html">DOWNLINE</a>
+            <a href="index.html#roster">ROSTER</a>
+            <a href="index.html#home">TOP</a>
+        </div>
+    </footer>
+</body>
+</html>
