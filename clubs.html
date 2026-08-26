@@ -213,6 +213,44 @@
         }
         .club-step .club-prose { font-size: 0.95rem; line-height: 1.65; }
 
+        /* Calling-frequency readout */
+        .club-freq {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 6px 14px;
+            background: #000;
+            border: 3px ridge var(--brass);
+            padding: 10px 18px;
+            margin: 14px 0 4px;
+        }
+        .club-freq-label {
+            font-family: 'Special Elite', monospace;
+            font-size: 0.66rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--lime);
+        }
+        .club-freq-num {
+            font-family: 'Bangers', cursive;
+            font-size: 1.9rem;
+            line-height: 1;
+            letter-spacing: 2px;
+            color: var(--brass-light);
+            text-shadow: 2px 2px 0 var(--blood-red);
+        }
+        .club-freq-unit {
+            font-family: 'Special Elite', monospace;
+            font-size: 0.8rem;
+            color: var(--brass);
+        }
+        .club-freq-morse {
+            font-family: 'Special Elite', monospace;
+            font-size: 0.7rem;
+            color: #777;
+            letter-spacing: 1px;
+        }
+
         /* Caveats / fine print */
         .club-callout {
             background: #000;
@@ -580,10 +618,16 @@
                         <div class="club-step-title">GET ON THE AIR LOCALLY, AND GO SLOWLY</div>
                         <div class="club-prose">
                             <p>
-                                Pick a night, coordinate a simplex frequency in the CW portion of the band, and
-                                run it at a speed the newest operator can actually copy. <strong>QRS is a feature,
-                                not an apology.</strong> A 5 WPM contact counts exactly as much as a 25 WPM one.
+                                Pick a night, put the club on the gang's calling frequency, and run it at a
+                                speed the newest operator can actually copy. <strong>QRS is a feature, not an
+                                apology.</strong> A 5 WPM contact counts exactly as much as a 25 WPM one.
                             </p>
+                            <div class="club-freq">
+                                <span class="club-freq-label">BKG calling</span>
+                                <span class="club-freq-num">144.025</span>
+                                <span class="club-freq-unit">MHz &middot; CW &middot; simplex</span>
+                                <span class="club-freq-morse">.---- ....- ....- .-.-.- ----- ..--- .....</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -616,11 +660,13 @@
                     as sincerely as we mean the first.
                 </p>
                 <p>
-                    <strong>Operate inside your privileges and your band plan.</strong> In the United States, 2-meter CW
-                    lives at the weak-signal end of the band, with 144.100 MHz the traditional CW calling
-                    frequency and the segment below it spoken for by EME and other weak-signal work. Check
-                    your own national and regional band plan, coordinate locally, and do not park on top of
-                    somebody's moonbounce schedule.
+                    <strong>Operate inside your privileges and your band plan.</strong> The gang calls on
+                    <strong>144.025 MHz</strong>, down at the CW and weak-signal end of 2 meters and a long way
+                    from the FM simplex and repeater segments. That end of the band is shared with EME and
+                    other weak-signal work, so the ordinary courtesies do real work here: listen first, send
+                    <em>QRL?</em> before you take the frequency — Bylaw III, and this is the situation it was
+                    written for — and shift up or down if you land on somebody already working. Outside the
+                    United States, check your national band plan before assuming 144.025 is yours to use.
                 </p>
                 <p>
                     <strong>Modifying a radio is your call and your consequence.</strong> The mod is well-trodden and the
@@ -638,8 +684,9 @@
             <a href="recruit.html" class="club-cta-btn">🤜 BRING IT HOME TO YOUR CLUB 🤜</a>
             <div class="club-cta-sub">
                 Questions, or want a member to visit your club net?
-                Work any of us on 2m CW — start with <a href="index.html#roster">the roster</a>
-                or <a href="index.html#join">how to join</a>.
+                Work any of us on 2m CW — we call on <strong style="color:var(--brass-light);">144.025</strong> —
+                or start with <a href="index.html#roster">the roster</a>
+                and <a href="index.html#join">how to join</a>.
             </div>
         </div>
 
