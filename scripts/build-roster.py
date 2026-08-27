@@ -176,7 +176,7 @@ def parse_members(csv_text: str) -> list[dict]:
         join_date = (row.get("Join Date") or "").strip()
         number = parse_member_number(row.get("#") or row.get("BKG #") or "")
         # "Sponsor" = who recruited this member, as a callsign or BKG number.
-        # Resolved to a sponsor callsign later in resolve_sponsors().
+        # Resolved to the sponsoring member in resolve_sponsors().
         sponsor_raw = ((row.get(sponsor_key) if sponsor_key else "") or "").strip()
         if callsign and number:
             members.append(
@@ -186,7 +186,7 @@ def parse_members(csv_text: str) -> list[dict]:
                     "join_date": join_date,
                     "number": number,
                     "sponsor_raw": sponsor_raw,
-                    "sponsor_call": None,
+                    "sponsor_member": None,
                 }
             )
     members.sort(key=lambda m: m["number"])
@@ -607,11 +607,13 @@ def render_roster_block(members: list[dict]) -> str:
 
 
 def resolve_sponsors(members: list[dict]) -> None:
-    """Resolve each member's raw "Sponsor" value to a sponsor callsign in place.
+    """Resolve each member's raw "Sponsor" value to the sponsoring member in place.
 
     A sponsor may be recorded as a callsign ("KI7QCF") or a BKG number ("12",
-    "BKG12", "BKG #12"). Sets member['sponsor_call'] to the matched member's
-    callsign, or None for a root / unrecognized sponsor.
+    "BKG12", "BKG #12"). Sets member['sponsor_member'] to the matched member's
+    dict, or None for a root / unrecognized sponsor. Stored as a reference (not
+    a callsign string) so the later annotate_qrz() canonical-callsign remap
+    can't leave sponsor links dangling on the old callsign.
     """
     by_call = {m["callsign"].upper(): m for m in members}
     by_num = {m["number"]: m for m in members}
@@ -630,8 +632,8 @@ def resolve_sponsors(members: list[dict]) -> None:
         elif sponsor is member:
             print(f"  Ignoring self-sponsor for {member['callsign']}", file=sys.stderr)
         else:
-            member["sponsor_call"] = sponsor["callsign"]
-    resolved = sum(1 for m in members if m.get("sponsor_call"))
+            member["sponsor_member"] = sponsor
+    resolved = sum(1 for m in members if m.get("sponsor_member"))
     print(f"  Resolved sponsor for {resolved}/{len(members)} members", file=sys.stderr)
 
 
@@ -646,7 +648,7 @@ def render_downline_data(members: list[dict]) -> str:
             "call": m["callsign"],
             "name": m["name"],
             "num": m["number"],
-            "sponsor": m.get("sponsor_call"),
+            "sponsor": m["sponsor_member"]["callsign"] if m.get("sponsor_member") else None,
         }
         for m in sorted(members, key=lambda m: m["number"])
     ]
