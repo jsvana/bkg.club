@@ -28,6 +28,7 @@ INDEX_PATH = REPO_ROOT / "index.html"
 TREE_PATH = REPO_ROOT / "tree.html"
 MEMBERS_TXT_PATH = REPO_ROOT / "members.txt"
 NAME_OVERRIDES_PATH = REPO_ROOT / "name-overrides.txt"
+LOCATION_OVERRIDES_PATH = REPO_ROOT / "location-overrides.txt"
 MUGSHOT_DIR = REPO_ROOT / "images" / "mugshots"
 MUGSHOT_REL_DIR = "images/mugshots"
 MUGSHOT_OVERRIDE_DIR = REPO_ROOT / "images" / "mugshots-override"
@@ -257,6 +258,84 @@ def apply_name_overrides(members: list[dict], overrides: dict[str, str]) -> None
         )
 
 
+def load_location_overrides() -> dict[str, tuple[str | None, str | None]]:
+    """Load callsign -> (state, country) overrides from location-overrides.txt.
+
+    Manually maintained, like name-overrides.txt. Overrides the QRZ-reported
+    location for members whose QRZ QTH is stale — this moves them on the
+    territory map, which also shifts state/country OG badges, since the OG is
+    simply the lowest-numbered member in each territory. Format, one entry per
+    line:
+
+        CALLSIGN = UT              (two-letter US state code)
+        CALLSIGN = Canada          (anything else: DXCC country name)
+
+    Blank lines and lines starting with '#' are ignored. The separator may be
+    '=' or ':'. Callsigns are matched case-insensitively. Returns a dict keyed
+    by upper-cased callsign mapping to (state, country) — a US-state entry
+    yields ("UT", "United States"), a country entry yields (None, name).
+    """
+    if not LOCATION_OVERRIDES_PATH.is_file():
+        return {}
+    overrides: dict[str, tuple[str | None, str | None]] = {}
+    for lineno, raw_line in enumerate(LOCATION_OVERRIDES_PATH.read_text().splitlines(), 1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        match = re.match(r"([A-Za-z0-9/]+)\s*[=:]\s*(.+)$", line)
+        if not match:
+            print(
+                f"  Skipping unparseable location override ({LOCATION_OVERRIDES_PATH.name}:{lineno}): {raw_line!r}",
+                file=sys.stderr,
+            )
+            continue
+        callsign = match.group(1).strip().upper()
+        value = match.group(2).strip()
+        if not value:
+            continue
+        if value.upper() in US_MAP_STATES:
+            overrides[callsign] = (value.upper(), "United States")
+        else:
+            overrides[callsign] = (None, value)
+    return overrides
+
+
+def apply_location_overrides(
+    members: list[dict], overrides: dict[str, tuple[str | None, str | None]]
+) -> None:
+    """Replace member['state']/member['country'] with location-overrides.txt
+    entries, in place.
+
+    Matches on the (QRZ-canonicalized) callsign, case-insensitively. Must run
+    after the QRZ lookups and before mark_territory_ogs() so the OG badges are
+    computed from the overridden locations. Logs each applied override and any
+    override whose callsign isn't (yet) in the roster.
+    """
+    if not overrides:
+        return
+    used: set[str] = set()
+    for member in members:
+        key = member["callsign"].upper()
+        override = overrides.get(key)
+        if override is None:
+            continue
+        used.add(key)
+        state, country = override
+        if (state, country) != (member.get("state"), member.get("country")):
+            print(
+                f"  Location override: {member['callsign']} "
+                f"{member.get('state')!r}/{member.get('country')!r} -> {state!r}/{country!r}",
+                file=sys.stderr,
+            )
+            member["state"] = state
+            member["country"] = country
+    for key in overrides.keys() - used:
+        print(
+            f"  Location override for {key} not applied (callsign not in roster)",
+            file=sys.stderr,
+        )
+
+
 def _qrz_get_raw(params: dict[str, str]) -> bytes | None:
     url = QRZ_XML_URL + "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"User-Agent": "BKG-Roster-Builder/1.0"})
@@ -462,6 +541,7 @@ def annotate_qrz(members: list[dict]) -> None:
     )
     print(f"  Mugshot resolved for {mugshots}/{len(members)} members (local overrides preferred)", file=sys.stderr)
 
+    apply_location_overrides(members, load_location_overrides())
     mark_territory_ogs(members)
 
 
