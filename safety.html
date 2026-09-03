@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>~*~BKG SAFETY BOARD~*~ Days Since We Broke A Quansheng!!</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%231a0a00' stroke='%23D4AF37' stroke-width='2'/%3E%3Crect x='5' y='20' width='22' height='6' rx='2' fill='%23D4AF37'/%3E%3Crect x='5' y='16' width='22' height='5' fill='%23D4AF37'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/bkg.css">
+</head>
+<body>
+    <div class="tiled-bg"></div>
+    <div class="grunge-overlay"></div>
+    <div class="floating-knuckle">🤜</div>
+    <div class="floating-knuckle">🤛</div>
+    <div class="floating-knuckle">🤜</div>
+    <div class="floating-knuckle">🤛</div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-area">
+                <div>
+                    <a href="index.html" class="logo-text"><span>BKG</span>.club</a>
+                    <div class="tagline">Get ur brass on the air!! ✨</div>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html#home">HOME</a> |
+                <a href="index.html#bylaws">BYLAWS</a> |
+                <a href="index.html#join">JOIN</a> |
+                <a href="index.html#roster">ROSTER</a> |
+                <a href="index.html#map">MAP</a> |
+                <a href="tree.html">DOWNLINE</a> |
+                <a href="recruit.html">RECRUIT</a> |
+                <a href="clubs.html">CLUBS</a> |
+                <a href="safety.html" class="active">SAFETY</a> |
+                <a href="https://discord.gg/wDs5dth22k" target="_blank" rel="noopener">DISCORD</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="marquee-container">
+        <div class="marquee-text">
+            ★彡 SAFETY FIRST!! 彡★ A QUANSHENG IS A TERRIBLE THING TO WASTE!! 彡★ TWO RESISTORS OFF, TWO JUMPERS ON, ZERO MAGIC SMOKE OUT!! 彡★ BACK UP UR CALIBRATION!! 彡★ 2 METER CW OR BUST!!! 彡★
+        </div>
+    </div>
+
+    <main class="main-wrapper">
+        <a href="index.html" class="back-link">⟵ BACK 2 HQ</a>
+        <h2 class="section-title">THE SAFETY BOARD</h2>
+        <div class="section-subtitle">🤜 Thirty-dollar radios. Forty-dollar soldering irons. Let's see how long we last. 🤜</div>
+
+        <!-- ============================================================
+             THE SIGN
+             Tags are filled in by the script at the bottom of the page.
+             ============================================================ -->
+        <div class="sign-mount">
+            <div class="sign-chain left"></div>
+            <div class="sign-chain right"></div>
+            <div class="safety-sign">
+                <span class="sign-bolt tl"></span><span class="sign-bolt tr"></span>
+                <span class="sign-bolt bl"></span><span class="sign-bolt br"></span>
+                <span class="sign-stamp" id="recordStamp" style="display:none;">NEW RECORD!!</span>
+
+                <div class="sign-band">⚠ Safety First ⚠<small>Brass Knuckle Gang · Dept. of Radio Safety</small></div>
+
+                <div class="sign-line lead">This gang has operated</div>
+                <span class="sr-only" id="daySr" aria-live="polite">0 days</span>
+
+                <div class="tag-rail" id="dayTags" aria-hidden="true">
+                    <div class="tag-slot"><span class="tag-hook"></span><div class="tag">0</div></div>
+                    <div class="tag-slot"><span class="tag-hook"></span><div class="tag">0</div></div>
+                    <div class="tag-slot"><span class="tag-hook"></span><div class="tag">0</div></div>
+                </div>
+
+                <div class="sign-line days" id="dayWord">Days</div>
+                <div class="sign-line what">without breaking a <strong>Quansheng</strong></div>
+
+                <div class="sign-rule"></div>
+
+                <div class="sign-record">
+                    <span class="sign-line">The previous record was</span>
+                    <span class="sr-only" id="recordSr">0 days</span>
+                    <div class="tag-rail" id="recordTags" aria-hidden="true">
+                        <div class="tag-slot"><span class="tag-hook"></span><div class="tag">0</div></div>
+                        <div class="tag-slot"><span class="tag-hook"></span><div class="tag">0</div></div>
+                        <div class="tag-slot"><span class="tag-hook"></span><div class="tag">0</div></div>
+                    </div>
+                    <span class="sign-line">days</span>
+                </div>
+
+                <div class="sign-foot">
+                    Report all incidents to a gang officer immediately
+                    <br>
+                    <span class="sign-updated">Tags changed: <b id="signToday">—</b></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="safety-since" id="safetySince"></div>
+
+        <div class="tree-stats safety-stats" id="safetyStats"></div>
+
+        <div class="incident-log">
+            <div class="incident-log-title">📋 INCIDENT REPORT</div>
+            <div class="incident-log-sub">Every time the tags went back to zero. Names named.</div>
+            <div id="incidentList"></div>
+        </div>
+
+        <div class="safety-confess">
+            <strong>BROKE ONE?</strong> Own it. Confess in the
+            <a href="https://discord.gg/wDs5dth22k" target="_blank" rel="noopener">Discord</a>
+            and a gang officer will reset the sign. Then go read the
+            <a href="clubs.html">hardware notes</a> and back up ur calibration data this time. 🤜📡
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-text">© 2024 BRASS KNUCKLE GANG | All Rights Reserved | 73 de BKG 🤜</div>
+        <div class="footer-links">
+            <a href="clubs.html">CLUBS</a>
+            <a href="index.html#roster">ROSTER</a>
+            <a href="https://discord.gg/wDs5dth22k" target="_blank" rel="noopener">DISCORD</a>
+            <a href="index.html#home">TOP</a>
+        </div>
+    </footer>
+
+    <script>
+    /* ============================================================
+       SAFETY BOARD DATA — edit this block when the tags go to zero
+       ------------------------------------------------------------
+       SIGN_HUNG  : the day the sign went up. Used as the start of
+                    the first streak, and as "day zero" if nobody has
+                    broken a radio yet.
+       INCIDENTS  : one entry per broken Quansheng, any order.
+                      date : "YYYY-MM-DD" (local date it happened)
+                      who  : callsign of the guilty party ("" if the
+                             gang has chosen to protect the innocent)
+                      what : short description for the incident log
+       RADIO_COST : what one costs, for the pizza-money stat.
+       The counter itself is computed from these on every page load,
+       so the tags change by themselves at midnight. Nothing else
+       on this page needs touching.
+       ============================================================ */
+    const SIGN_HUNG = "2026-09-03";
+    const INCIDENTS = [
+        // { date: "2026-08-30", who: "KI7QCF", what: "Lifted a pad doing the resistor mod. Radio now a paperweight." },
+    ];
+    const RADIO_COST = 30;
+
+    (function () {
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"]/g, c => (
+                { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
+            ));
+        }
+        // "YYYY-MM-DD" -> local midnight Date (avoids the UTC-shift-by-a-day bug)
+        function parseDay(s) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s).trim());
+            if (!m) return null;
+            return new Date(+m[1], +m[2] - 1, +m[3]);
+        }
+        function today() {
+            const n = new Date();
+            return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+        }
+        function daysBetween(a, b) {
+            return Math.max(0, Math.round((b - a) / 86400000));
+        }
+        function fmtDate(d) {
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        function pad3(n) {
+            return String(Math.max(0, Math.floor(n))).padStart(3, '0');
+        }
+
+        // ---- Assemble the timeline: sign hung, then each incident in date order ----
+        const hung = parseDay(SIGN_HUNG) || today();
+        const incidents = INCIDENTS
+            .map(i => ({ ...i, day: parseDay(i.date) }))
+            .filter(i => i.day)
+            .sort((a, b) => a.day - b.day);
+
+        // streak that ended at each incident = days since the previous marker
+        let prev = hung;
+        incidents.forEach(i => { i.streak = daysBetween(prev, i.day); prev = i.day; });
+
+        const last = incidents.length ? incidents[incidents.length - 1] : null;
+        const since = last ? last.day : hung;
+        const previousRecord = incidents.reduce((mx, i) => Math.max(mx, i.streak), 0);
+
+        // ---- Hang tags ----
+        // Each digit is its own tag. When a digit changes (page load, or
+        // midnight rolling over in an open tab) that tag gets re-hung with
+        // a flip so it reads like somebody swapped the card by hand.
+        function setTags(rail, value) {
+            const text = pad3(value);
+            const slots = rail.querySelectorAll('.tag-slot');
+            // grow the rail if we ever pass 999 days (a gang can dream)
+            for (let i = slots.length; i < text.length; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'tag-slot';
+                slot.innerHTML = '<span class="tag-hook"></span><div class="tag">0</div>';
+                rail.appendChild(slot);
+            }
+            const tags = rail.querySelectorAll('.tag');
+            [...text].forEach((ch, i) => {
+                const tag = tags[i];
+                if (tag.textContent === ch && tag.dataset.hung) return;
+                tag.textContent = ch;
+                tag.dataset.hung = '1';
+                tag.classList.remove('swap');
+                void tag.offsetWidth; // restart the flip
+                tag.style.animationDelay = (i * 0.18) + 's, ' + (i * 0.18 + 0.75) + 's';
+                tag.classList.add('swap');
+            });
+        }
+
+        let shownDays = -1;
+        function render() {
+            const now = today();
+            const days = daysBetween(since, now);
+            if (days === shownDays) return;
+            shownDays = days;
+
+            setTags(document.getElementById('dayTags'), days);
+            setTags(document.getElementById('recordTags'), previousRecord);
+            document.getElementById('dayWord').textContent = days === 1 ? 'Day' : 'Days';
+            document.getElementById('daySr').textContent = days + (days === 1 ? ' day' : ' days');
+            document.getElementById('recordSr').textContent = previousRecord + (previousRecord === 1 ? ' day' : ' days');
+            document.getElementById('signToday').textContent = fmtDate(now);
+            document.getElementById('recordStamp').style.display =
+                (incidents.length && days > previousRecord) ? '' : 'none';
+
+            const sinceEl = document.getElementById('safetySince');
+            if (last) {
+                sinceEl.innerHTML =
+                    '⏱ Counting since <strong>' + esc(fmtDate(last.day)) + '</strong>' +
+                    (last.who ? ' — courtesy of <a href="https://www.qrz.com/db/' + esc(last.who) +
+                        '" target="_blank" rel="noopener">' + esc(last.who) + '</a>' : '');
+            } else {
+                sinceEl.innerHTML =
+                    '⏱ Sign hung <strong>' + esc(fmtDate(hung)) + '</strong>. Not a single radio lost. Yet.';
+            }
+
+            // ---- Stats ----
+            const lost = incidents.length;
+            const stats = [
+                { num: days, label: 'Days Clean' },
+                { num: lost, label: lost === 1 ? 'Radio Lost' : 'Radios Lost' },
+                { num: '$' + (lost * RADIO_COST), label: 'Pizza Money Lost' },
+                { num: Math.max(previousRecord, days), label: 'Best Streak' },
+            ];
+            document.getElementById('safetyStats').innerHTML = stats.map(s =>
+                '<div class="tree-stat"><div class="tree-stat-num">' + esc(s.num) +
+                '</div><div class="tree-stat-label">' + esc(s.label) + '</div></div>'
+            ).join('');
+        }
+
+        // ---- Incident log (newest first) ----
+        const listEl = document.getElementById('incidentList');
+        if (!incidents.length) {
+            listEl.innerHTML = '<div class="incident-empty">No incidents on file.<br>' +
+                'Either the gang is careful, or nobody has confessed. 🤔</div>';
+        } else {
+            listEl.innerHTML = incidents.slice().reverse().map((i, idx) => {
+                const n = incidents.length - idx;
+                const who = i.who
+                    ? '<a class="incident-who" href="https://www.qrz.com/db/' + esc(i.who) +
+                      '" target="_blank" rel="noopener">' + esc(i.who) + '</a>'
+                    : '<span class="incident-who" style="color:#888;">UNKNOWN</span>';
+                return '<div class="incident-row">' +
+                    '<span class="incident-num">#' + pad3(n) + '</span>' +
+                    '<span class="incident-date">' + esc(fmtDate(i.day)) +
+                        '<span class="incident-streak">' + i.streak + ' day streak ended</span></span>' +
+                    '<span class="incident-what">' + who + esc(i.what || 'Details withheld.') + '</span>' +
+                '</div>';
+            }).join('');
+        }
+
+        render();
+        // re-check each minute so an open tab flips the tags at midnight
+        setInterval(render, 60 * 1000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+    })();
+    </script>
+</body>
+</html>

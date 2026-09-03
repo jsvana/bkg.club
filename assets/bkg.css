@@ -568,3 +568,355 @@ body {
     .node-call { font-size: 1.1rem; }
     .tree-legend { font-size: 0.62rem; }
 }
+
+/* ============================================================
+   SAFETY SIGN (safety.html) — "N DAYS WITHOUT A BROKEN QUANSHENG"
+   The sign is brass-on-black like the rest of the site but built
+   like a real workplace accident board: stamped header band,
+   corner bolts, and a rail of hang tags for the numbers.
+   ============================================================ */
+.sr-only {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.sign-mount {
+    --tag: clamp(58px, 16vw, 112px);
+    --sign-yellow: #E4B838;
+    --sign-yellow-dark: #B8891A;
+    --sign-ink: #0b0700;
+    max-width: 640px;
+    margin: 0 auto 28px;
+    padding-top: 26px;
+    position: relative;
+}
+/* Two chains up to the top of the viewport-ish, like it hangs off the header */
+.sign-chain {
+    position: absolute;
+    top: 0;
+    width: 8px;
+    height: 34px;
+    background: repeating-linear-gradient(180deg, #999 0 5px, #444 5px 8px, #999 8px 10px, transparent 10px 12px);
+    border-radius: 4px;
+    filter: drop-shadow(0 2px 1px rgba(0,0,0,0.8));
+}
+.sign-chain.left { left: 12%; }
+.sign-chain.right { right: 12%; }
+
+.safety-sign {
+    position: relative;
+    background:
+        radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.28), transparent 45%),
+        radial-gradient(ellipse at 90% 100%, rgba(0,0,0,0.25), transparent 45%),
+        linear-gradient(180deg, var(--sign-yellow) 0%, #D9AC2E 55%, var(--sign-yellow-dark) 100%);
+    border: 6px solid var(--sign-ink);
+    outline: 3px solid var(--brass);
+    outline-offset: 3px;
+    box-shadow:
+        inset 0 0 0 2px rgba(255,255,255,0.18),
+        0 18px 40px rgba(0,0,0,0.85),
+        0 0 40px rgba(212,175,55,0.25);
+    padding: 0 0 14px;
+    color: var(--sign-ink);
+    text-align: center;
+    transform: rotate(-0.6deg);
+    overflow: hidden;
+}
+.safety-sign::after {
+    /* grime */
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url('data:image/svg+xml,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.13"/></svg>');
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+.sign-bolt {
+    position: absolute;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ddd 0%, #888 45%, #333 100%);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.8), inset 0 0 0 2px rgba(0,0,0,0.35);
+    z-index: 2;
+}
+.sign-bolt::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 10px; height: 2px;
+    background: #222;
+    transform: translate(-50%, -50%) rotate(35deg);
+}
+.sign-bolt.tl { top: 8px; left: 8px; }
+.sign-bolt.tr { top: 8px; right: 8px; }
+.sign-bolt.bl { bottom: 8px; left: 8px; }
+.sign-bolt.br { bottom: 8px; right: 8px; }
+
+.sign-band {
+    background: var(--sign-ink);
+    color: var(--sign-yellow);
+    font-family: 'Anton', 'Impact', 'Arial Narrow', sans-serif;
+    font-size: clamp(1.5rem, 6vw, 2.6rem);
+    letter-spacing: 0.18em;
+    padding: 8px 40px 6px;
+    border-bottom: 4px solid var(--sign-yellow);
+    text-transform: uppercase;
+}
+.sign-band small {
+    display: block;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    color: #c9a227;
+    opacity: 0.85;
+}
+.sign-line {
+    font-family: 'Anton', 'Impact', 'Arial Narrow', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1.05;
+    padding: 0 22px;
+}
+.sign-line.lead { font-size: clamp(1.1rem, 4.6vw, 1.9rem); margin-top: 16px; }
+.sign-line.days { font-size: clamp(2.4rem, 11vw, 4.6rem); margin-top: 6px; letter-spacing: 0.1em; }
+.sign-line.what { font-size: clamp(1rem, 4.2vw, 1.7rem); margin-top: 2px; }
+.sign-line.what strong { color: var(--blood-red); -webkit-text-stroke: 1px var(--sign-ink); }
+.sign-rule {
+    height: 4px;
+    background: var(--sign-ink);
+    margin: 16px 30px 12px;
+    box-shadow: 0 2px 0 rgba(255,255,255,0.3);
+}
+.sign-record {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px 12px;
+    padding: 0 18px;
+    position: relative;
+}
+.sign-record .sign-line { padding: 0; font-size: clamp(0.85rem, 3.4vw, 1.25rem); }
+.sign-record .tag-rail { --tag: clamp(30px, 7vw, 46px); margin: 0; padding-top: 12px; }
+
+/* ---- Hang tags ---- */
+.tag-rail {
+    display: inline-flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: calc(var(--tag) * 0.12);
+    margin: 18px auto 0;
+    padding: 14px calc(var(--tag) * 0.25) 0;
+    position: relative;
+}
+/* the metal rail the tags hang from */
+.tag-rail::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 7px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #bbb 0%, #666 45%, #222 100%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+.tag-slot {
+    position: relative;
+    width: var(--tag);
+    padding-top: calc(var(--tag) * 0.16);
+}
+.tag-hook {
+    position: absolute;
+    top: calc(var(--tag) * -0.10);
+    left: 50%;
+    width: calc(var(--tag) * 0.2);
+    height: calc(var(--tag) * 0.3);
+    margin-left: calc(var(--tag) * -0.1);
+    border: 3px solid #333;
+    border-top-color: #999;
+    border-left-color: #777;
+    border-radius: 50%;
+    background: transparent;
+    z-index: 3;
+}
+.tag {
+    position: relative;
+    width: var(--tag);
+    height: calc(var(--tag) * 1.32);
+    background:
+        linear-gradient(160deg, rgba(255,255,255,0.35), transparent 55%),
+        #f3ecd8;
+    color: #0b0700;
+    border: 2px solid #1b1509;
+    border-radius: 3px;
+    box-shadow:
+        inset 0 0 0 2px rgba(0,0,0,0.05),
+        0 6px 10px rgba(0,0,0,0.55);
+    font-family: 'Anton', 'Impact', 'Arial Narrow', sans-serif;
+    font-size: calc(var(--tag) * 1.0);
+    line-height: calc(var(--tag) * 1.32);
+    text-align: center;
+    transform-origin: 50% calc(var(--tag) * -0.02);
+    animation: tagSwing 5.5s ease-in-out infinite;
+    will-change: transform;
+    user-select: none;
+}
+/* punched hole (shows sign colour through) with a metal grommet */
+.tag::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--tag) * 0.07);
+    left: 50%;
+    width: calc(var(--tag) * 0.13);
+    height: calc(var(--tag) * 0.13);
+    margin-left: calc(var(--tag) * -0.065);
+    border-radius: 50%;
+    background: var(--sign-yellow-dark);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 0 0 2px #8a8a8a, 0 0 0 3px #333;
+}
+/* faint print marks to sell the "stack of tags" look */
+.tag::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--tag) * 0.24) calc(var(--tag) * 0.08) calc(var(--tag) * 0.08);
+    border: 1px dashed rgba(0,0,0,0.18);
+    pointer-events: none;
+}
+.tag-slot:nth-child(2n) .tag { animation-delay: -1.7s; animation-duration: 6.2s; }
+.tag-slot:nth-child(3n) .tag { animation-delay: -3.1s; animation-duration: 5.1s; }
+.tag.swap { animation: tagFlip 0.75s cubic-bezier(.2,.9,.3,1.2) both, tagSwing 5.5s ease-in-out 0.75s infinite; }
+
+@keyframes tagSwing {
+    0%, 100% { transform: rotate(-2.2deg); }
+    50% { transform: rotate(2.2deg); }
+}
+@keyframes tagFlip {
+    0%   { transform: rotateX(-100deg) translateY(-10px); opacity: 0; }
+    60%  { transform: rotateX(12deg); opacity: 1; }
+    100% { transform: rotateX(0); }
+}
+
+.sign-stamp {
+    /* rubber-stamped over the tags when the current run beats the old record */
+    position: absolute;
+    left: 2%;
+    top: 34%;
+    z-index: 4;
+    font-family: 'Bangers', cursive;
+    font-size: clamp(1rem, 4vw, 1.6rem);
+    letter-spacing: 0.08em;
+    color: #a30000;
+    border: 3px double #a30000;
+    padding: 2px 10px;
+    transform: rotate(-16deg);
+    opacity: 0.8;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+.sign-foot {
+    margin-top: 12px;
+    padding: 0 22px;
+    font-family: 'Special Elite', monospace;
+    font-size: clamp(0.58rem, 2.4vw, 0.78rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #2a1d00;
+}
+.sign-foot .sign-updated {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 1px 10px;
+    border: 2px solid #2a1d00;
+    background: rgba(255,255,255,0.35);
+    text-transform: none;
+    letter-spacing: 0.02em;
+}
+.sign-foot .sign-updated b { color: var(--blood-red); }
+
+/* ---- Under the sign ---- */
+.safety-since {
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    color: var(--lime);
+    margin-bottom: 22px;
+}
+.safety-since a { color: var(--brass-light); }
+.safety-stats { margin-bottom: 30px; }
+
+.incident-log {
+    background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+    border: 4px ridge var(--brass);
+    padding: 16px;
+    max-width: 760px;
+    margin: 0 auto 28px;
+}
+.incident-log-title {
+    font-family: 'Bangers', cursive;
+    font-size: 1.6rem;
+    color: var(--brass-light);
+    text-shadow: 2px 2px 0 var(--blood-red);
+    text-align: center;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+.incident-log-sub {
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.72rem;
+    color: #888;
+    margin-bottom: 14px;
+}
+.incident-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 6px 14px;
+    align-items: baseline;
+    padding: 8px 6px;
+    border-bottom: 1px dashed rgba(212, 175, 55, 0.3);
+}
+.incident-row:last-child { border-bottom: none; }
+.incident-num { font-family: 'Bangers', cursive; font-size: 1.15rem; color: var(--brass); white-space: nowrap; }
+.incident-date { font-family: 'Special Elite', monospace; font-size: 0.78rem; color: var(--lime); white-space: nowrap; }
+.incident-what { font-family: 'Comic Sans MS', cursive; font-size: 0.85rem; color: #ddd; }
+.incident-who { font-family: 'Bangers', cursive; color: var(--brass-light); text-decoration: none; letter-spacing: 1px; margin-right: 6px; }
+.incident-who:hover { text-shadow: 0 0 10px var(--brass); }
+.incident-streak {
+    display: inline-block;
+    margin-left: 8px;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.68rem;
+    color: var(--brass-light);
+    border: 1px solid var(--brass-dark);
+    padding: 0 8px;
+    white-space: nowrap;
+}
+.incident-empty {
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    color: #888;
+    padding: 18px 8px;
+    line-height: 1.6;
+}
+
+.safety-confess {
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+    background: #000;
+    border: 2px solid var(--brass-dark);
+    padding: 14px;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    color: #999;
+    line-height: 1.6;
+}
+.safety-confess a { color: var(--brass-light); }
+
+@media (max-width: 600px) {
+    .incident-row { grid-template-columns: auto 1fr; }
+    .incident-what { grid-column: 1 / -1; }
+    .sign-chain.left { left: 8%; }
+    .sign-chain.right { right: 8%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tag, .tag.swap { animation: none; }
+}
