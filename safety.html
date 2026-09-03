@@ -131,9 +131,10 @@
     /* ============================================================
        SAFETY BOARD DATA — edit this block when the tags go to zero
        ------------------------------------------------------------
-       SIGN_HUNG  : the day the sign went up. Used as the start of
-                    the first streak, and as "day zero" if nobody has
-                    broken a radio yet.
+       SIGN_HUNG  : the day the sign went up. Used as "day zero" if
+                    nobody has broken a radio yet. Backdate it before
+                    the first incident and that incident gets a streak
+                    too; otherwise the first streak is just unknown.
        INCIDENTS  : one entry per broken Quansheng, any order.
                       date : "YYYY-MM-DD" (local date it happened)
                       who  : callsign of the guilty party ("" if the
@@ -144,9 +145,10 @@
        so the tags change by themselves at midnight. Nothing else
        on this page needs touching.
        ============================================================ */
-    const SIGN_HUNG = "2026-09-03";
+    const SIGN_HUNG = "2026-08-25";
     const INCIDENTS = [
-        // { date: "2026-08-30", who: "KI7QCF", what: "Lifted a pad doing the resistor mod. Radio now a paperweight." },
+        { date: "2026-08-25", who: "N9HO",  what: "Ripped the screen clean off one at the Huntsville Hamfest." },
+        { date: "2026-09-01", who: "K3JRZ", what: "Absolutely murdered the whole section of pads around the resistors that have to come off." },
     ];
     const RADIO_COST = 30;
 
@@ -183,13 +185,14 @@
             .filter(i => i.day)
             .sort((a, b) => a.day - b.day);
 
-        // streak that ended at each incident = days since the previous marker
-        let prev = hung;
-        incidents.forEach(i => { i.streak = daysBetween(prev, i.day); prev = i.day; });
+        // streak that ended at each incident = days since the previous marker.
+        // If the sign wasn't up before the first incident, that streak is unknown.
+        let prev = hung < incidents[0]?.day ? hung : null;
+        incidents.forEach(i => { i.streak = prev ? daysBetween(prev, i.day) : null; prev = i.day; });
 
         const last = incidents.length ? incidents[incidents.length - 1] : null;
         const since = last ? last.day : hung;
-        const previousRecord = incidents.reduce((mx, i) => Math.max(mx, i.streak), 0);
+        const previousRecord = incidents.reduce((mx, i) => Math.max(mx, i.streak || 0), 0);
 
         // ---- Hang tags ----
         // Each digit is its own tag. When a digit changes (page load, or
@@ -274,7 +277,8 @@
                 return '<div class="incident-row">' +
                     '<span class="incident-num">#' + pad3(n) + '</span>' +
                     '<span class="incident-date">' + esc(fmtDate(i.day)) +
-                        '<span class="incident-streak">' + i.streak + ' day streak ended</span></span>' +
+                        (i.streak == null ? '' :
+                            '<span class="incident-streak">' + i.streak + ' day streak ended</span>') + '</span>' +
                     '<span class="incident-what">' + who + esc(i.what || 'Details withheld.') + '</span>' +
                 '</div>';
             }).join('');
