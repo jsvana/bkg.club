@@ -26,6 +26,7 @@ SHEET_CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?forma
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = REPO_ROOT / "index.html"
 TREE_PATH = REPO_ROOT / "tree.html"
+NEARBY_PATH = REPO_ROOT / "nearby.html"
 MEMBERS_TXT_PATH = REPO_ROOT / "members.txt"
 NAME_OVERRIDES_PATH = REPO_ROOT / "name-overrides.txt"
 LOCATION_OVERRIDES_PATH = REPO_ROOT / "location-overrides.txt"
@@ -329,6 +330,10 @@ def apply_location_overrides(
             )
             member["state"] = state
             member["country"] = country
+            # overridden = QRZ QTH is stale, so its coords are too
+            member["grid"] = None
+            member["lat"] = None
+            member["lon"] = None
     for key in overrides.keys() - used:
         print(
             f"  Location override for {key} not applied (callsign not in roster)",
@@ -383,7 +388,10 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
     US state code (US ops only); 'country' is QRZ's DXCC country name, used to
     group non-US ops by country in the territory leaderboard.
     """
-    empty = {"current_call": None, "state": None, "country": None, "image": None}
+    empty = {
+        "current_call": None, "state": None, "country": None, "image": None,
+        "grid": None, "lat": None, "lon": None,
+    }
     raw = _qrz_get_raw({"s": session_key, "callsign": callsign})
     if raw is None:
         return empty
@@ -435,7 +443,30 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
         if candidate.startswith(("http://", "https://")):
             image = candidate
 
-    return {"current_call": current_call, "state": state, "country": country, "image": image}
+    # Maidenhead grid + coordinates, for the nearby-members map
+    grid = None
+    grid_elem = call.find("q:grid", QRZ_NS)
+    if grid_elem is not None and grid_elem.text:
+        text = grid_elem.text.strip().upper()
+        if re.fullmatch(r"[A-R]{2}[0-9]{2}(?:[A-X]{2})?([0-9]{2})?", text):
+            grid = text[:6]
+
+    lat = lon = None
+    lat_elem = call.find("q:lat", QRZ_NS)
+    lon_elem = call.find("q:lon", QRZ_NS)
+    if lat_elem is not None and lon_elem is not None and lat_elem.text and lon_elem.text:
+        try:
+            lat = float(lat_elem.text.strip())
+            lon = float(lon_elem.text.strip())
+        except ValueError:
+            lat = lon = None
+        if lat is not None and not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            lat = lon = None
+
+    return {
+        "current_call": current_call, "state": state, "country": country,
+        "image": image, "grid": grid, "lat": lat, "lon": lon,
+    }
 
 
 def local_override_mugshot(callsign: str) -> str | None:
@@ -504,6 +535,9 @@ def annotate_qrz(members: list[dict]) -> None:
         member["state_og"] = False
         member["country_og"] = False
         member["mugshot_path"] = None
+        member["grid"] = None
+        member["lat"] = None
+        member["lon"] = None
 
     username = os.environ.get("QRZ_USERNAME")
     password = os.environ.get("QRZ_PASSWORD")
@@ -527,6 +561,9 @@ def annotate_qrz(members: list[dict]) -> None:
             member["callsign"] = current_call
         member["state"] = info["state"]
         member["country"] = info["country"]
+        member["grid"] = info["grid"]
+        member["lat"] = info["lat"]
+        member["lon"] = info["lon"]
         override = local_override_mugshot(member["callsign"])
         if override:
             member["mugshot_path"] = override
@@ -773,6 +810,67 @@ def render_map_data(members: list[dict]) -> str:
     return json.dumps(data, separators=(",", ":"))
 
 
+def grid_to_latlon(grid: str) -> tuple[float, float] | None:
+    """Center of a 4- or 6-char Maidenhead grid square."""
+    if not re.fullmatch(r"[A-R]{2}[0-9]{2}(?:[A-X]{2})?", grid or ""):
+        return None
+    lon = (ord(grid[0]) - ord("A")) * 20 - 180 + int(grid[2]) * 2
+    lat = (ord(grid[1]) - ord("A")) * 10 - 90 + int(grid[3])
+    if len(grid) == 6:
+        lon += (ord(grid[4]) - ord("A")) * (2 / 24) + 1 / 24
+        lat += (ord(grid[5]) - ord("A")) * (1 / 24) + 0.5 / 24
+    else:
+        lon += 1.0
+        lat += 0.5
+    return (round(lat, 4), round(lon, 4))
+
+
+def render_geo_data(members: list[dict]) -> str:
+    """Build the JSON geo data consumed by nearby.html (#bkg-geo-data):
+
+    [{"call", "name", "num", "lat", "lon", "grid"}, ...] — one entry per
+    member with a usable location. Coordinates are grid-square centers
+    (QRZ-public and deliberately coarse); a member with QRZ lat/lon but no
+    grid gets those coords rounded to 2 decimals (~1 km) instead. Members
+    with a location override are excluded — their QRZ coords are stale.
+    """
+    entries = []
+    for member in sorted(members, key=lambda m: m["number"]):
+        grid = member.get("grid")
+        latlon = grid_to_latlon(grid) if grid else None
+        if latlon is None and member.get("lat") is not None:
+            latlon = (round(member["lat"], 2), round(member["lon"], 2))
+        if latlon is None:
+            continue
+        entry = {
+            "call": member["callsign"],
+            "name": member["name"],
+            "num": member["number"],
+            "lat": latlon[0],
+            "lon": latlon[1],
+        }
+        if grid:
+            entry["grid"] = grid
+        entries.append(entry)
+    print(f"  Geo coords for {len(entries)}/{len(members)} members", file=sys.stderr)
+    return json.dumps(entries, separators=(",", ":"))
+
+
+def update_nearby(members: list[dict]) -> None:
+    """Inject the geo JSON into nearby.html. No-op if nearby.html is absent."""
+    if not NEARBY_PATH.is_file():
+        print(f"  {NEARBY_PATH.name} not found, skipping nearby build", file=sys.stderr)
+        return
+    html = NEARBY_PATH.read_text()
+    html = replace_between(
+        html,
+        "<!-- GEO_DATA:START -->",
+        "<!-- GEO_DATA:END -->",
+        render_geo_data(members),
+    )
+    NEARBY_PATH.write_text(html)
+
+
 US_STATE_NAMES = {
     "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
     "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
@@ -896,6 +994,9 @@ def main() -> int:
 
     update_tree(members)
     print(f"Updated {TREE_PATH.name}")
+
+    update_nearby(members)
+    print(f"Updated {NEARBY_PATH.name}")
 
     MEMBERS_TXT_PATH.write_text(render_members_txt(members))
     print(f"Wrote {MEMBERS_TXT_PATH.name}")
