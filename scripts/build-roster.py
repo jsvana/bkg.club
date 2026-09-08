@@ -946,6 +946,22 @@ def update_tree(members: list[dict]) -> None:
     TREE_PATH.write_text(html)
 
 
+def og_note_tags(member: dict) -> list[str]:
+    """OG labels for a callsign note, mirroring the roster badges.
+
+    The founder and OG_BADGE_NUMBERS get "OG"; the first member in a US
+    state or DX country gets "UT OG" / "Canada OG".
+    """
+    tags = []
+    if member["number"] == 1 or member["number"] in OG_BADGE_NUMBERS:
+        tags.append("OG")
+    if member.get("state_og") and member.get("state"):
+        tags.append(f"{member['state']} OG")
+    elif member.get("country_og") and member.get("country"):
+        tags.append(f"{member['country'].strip()} OG")
+    return tags
+
+
 def render_members_txt(members: list[dict]) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     lines = [
@@ -956,7 +972,11 @@ def render_members_txt(members: list[dict]) -> str:
     ]
     for member in sorted(members, key=lambda m: m["callsign"]):
         label = first_name_initial(member["name"])
-        lines.append(f"{member['callsign']} 🤜 {label} BKG #{member['number']}")
+        line = f"{member['callsign']} 🤜 {label} BKG #{member['number']}"
+        tags = og_note_tags(member)
+        if tags:
+            line += f" ({', '.join(tags)})"
+        lines.append(line)
     lines.append("")
     return "\n".join(lines)
 
