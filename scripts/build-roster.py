@@ -249,8 +249,9 @@ def apply_name_overrides(members: list[dict], overrides: dict[str, str]) -> None
                 file=sys.stderr,
             )
             member["name"] = new_name
-            used.add(key)
-        elif new_name:
+        if new_name:
+            # Overrides are shown verbatim in members.txt
+            member["name_override"] = True
             used.add(key)
     for key in overrides.keys() - used:
         print(
@@ -582,22 +583,53 @@ def annotate_qrz(members: list[dict]) -> None:
     mark_territory_ogs(members)
 
 
+NAME_SUFFIXES = {"jr", "sr", "ii", "iii", "iv"}
+NAME_TITLES = {"dr", "mr", "mrs", "ms", "rev"}
+
+
+def normalize_name_case(name: str) -> str:
+    """Title-case a name typed in ALL CAPS or lowercase.
+
+    Mixed-case entries (McDonald, DeVon, QRS Forrest) are left alone.
+    Handles hyphens and apostrophes: MARY-JO O'BRIEN -> Mary-Jo O'Brien.
+    """
+    if name.isupper() or name.islower():
+        return re.sub(r"[A-Za-z]+", lambda m: m.group(0).capitalize(), name)
+    return name
+
+
 def first_name_initial(name: str) -> str:
-    """Return 'First L' from 'First Last' (handles suffixes like 'Jr')."""
+    """Return 'First L' from a roster name, normalizing sheet formatting.
+
+    Handles extra whitespace, ALL CAPS / lowercase, a quoted or parenthesized
+    nickname (Robert "Bob" Smith -> Bob S), 'Last, First', titles, and
+    suffixes like 'Jr'.
+    """
     if not name:
         return ""
-    parts = [p.strip(",") for p in name.split() if p.strip(",")]
+    name = normalize_name_case(" ".join(name.split()))
+    # Prefer a nickname: Robert "Bob" Smith / Robert (Bob) Smith -> Bob Smith
+    nick = re.search(r'["\u201c\u201d(]\s*([^"\u201c\u201d()]+?)\s*["\u201c\u201d)]', name)
+    if nick:
+        name = f"{nick.group(1)} {name[:nick.start()]} {name[nick.end():]}"
+    # 'Smith, John' -> 'John Smith' (but not 'John Smith, Jr')
+    if "," in name:
+        head, tail = (part.strip() for part in name.split(",", 1))
+        if tail and tail.rstrip(".").lower() not in NAME_SUFFIXES:
+            name = f"{tail} {head}"
+    parts = [p.strip(",. ") for p in name.split()]
+    parts = [p for p in parts if p]
+    parts = [p for p in parts if p.lower() not in NAME_TITLES]
     if not parts:
         return ""
-    if len(parts) == 1:
-        return parts[0]
     first = parts[0]
-    # skip suffixes when picking last initial
-    suffixes = {"Jr", "Sr", "II", "III", "IV"}
-    last_candidates = [p for p in parts[1:] if p.rstrip(".") not in suffixes]
+    if len(parts) == 1:
+        return first
+    last_candidates = [p for p in parts[1:] if p.lower() not in NAME_SUFFIXES]
     if not last_candidates:
         return first
-    return f"{first} {last_candidates[-1][0].upper()}"
+    initial = re.sub(r"[^A-Za-z]", "", last_candidates[-1])[:1].upper()
+    return f"{first} {initial}" if initial else first
 
 
 def territory_og_badge_html(member: dict) -> str:
@@ -946,6 +978,22 @@ def update_tree(members: list[dict]) -> None:
     TREE_PATH.write_text(html)
 
 
+def og_note_tags(member: dict) -> list[str]:
+    """OG labels for a callsign note, mirroring the roster badges.
+
+    The founder and OG_BADGE_NUMBERS get "OG"; the first member in a US
+    state or DX country gets "UT OG" / "Canada OG".
+    """
+    tags = []
+    if member["number"] == 1 or member["number"] in OG_BADGE_NUMBERS:
+        tags.append("OG")
+    if member.get("state_og") and member.get("state"):
+        tags.append(f"{member['state']} OG")
+    elif member.get("country_og") and member.get("country"):
+        tags.append(f"{member['country'].strip()} OG")
+    return tags
+
+
 def render_members_txt(members: list[dict]) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     lines = [
@@ -955,8 +1003,15 @@ def render_members_txt(members: list[dict]) -> str:
         "",
     ]
     for member in sorted(members, key=lambda m: m["callsign"]):
-        label = first_name_initial(member["name"])
-        lines.append(f"{member['callsign']} 🤜 {label} BKG #{member['number']}")
+        if member.get("name_override"):
+            label = member["name"]
+        else:
+            label = first_name_initial(member["name"])
+        line = f"{member['callsign']} 🤜 {label} BKG #{member['number']}"
+        tags = og_note_tags(member)
+        if tags:
+            line += f" ({', '.join(tags)})"
+        lines.append(line)
     lines.append("")
     return "\n".join(lines)
 
