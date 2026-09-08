@@ -249,8 +249,9 @@ def apply_name_overrides(members: list[dict], overrides: dict[str, str]) -> None
                 file=sys.stderr,
             )
             member["name"] = new_name
-            used.add(key)
-        elif new_name:
+        if new_name:
+            # Overrides are shown verbatim in members.txt
+            member["name_override"] = True
             used.add(key)
     for key in overrides.keys() - used:
         print(
@@ -1002,7 +1003,10 @@ def render_members_txt(members: list[dict]) -> str:
         "",
     ]
     for member in sorted(members, key=lambda m: m["callsign"]):
-        label = first_name_initial(member["name"])
+        if member.get("name_override"):
+            label = member["name"]
+        else:
+            label = first_name_initial(member["name"])
         line = f"{member['callsign']} 🤜 {label} BKG #{member['number']}"
         tags = og_note_tags(member)
         if tags:

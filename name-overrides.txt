@@ -16,7 +16,8 @@
 #   applies the moment that callsign appears (same as a pre-staged mugshot).
 #
 # Affects the roster cards, the territory map, the downline tree, and
-# members.txt on the next build (scripts/build-roster.py).
+# members.txt on the next build (scripts/build-roster.py). Overrides appear
+# verbatim in members.txt (no "First L" shortening).
 
 KD2MZH = QRS Forrest
 KI6SYD = Max P
