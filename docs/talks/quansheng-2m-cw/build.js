@@ -97,7 +97,7 @@ function foot(s, text) {
       ["The firmware", "What NR7Y's CW mod turns the radio into."],
       ["The mod", "Tools, parts, and the two-resistor, two-wire rework."],
       ["Flash, set up, get on the air", "uvtools2, the CW menu, and 144.025."],
-      ["The Brass Knuckle Gang", "Who we are and how you get a number."],
+      ["The Brass Knuckle Gang", "Who we are, how you get a number, and an app to learn the code."],
     ];
     items.forEach(([t, d], i) => {
       const y = 1.75 + i * 0.86;
@@ -540,7 +540,44 @@ function foot(s, text) {
     body(s, "Membership is voluntary, every time. Confirm they want in before you submit them.", rx2 + 0.3, 6.38, half - 0.6, 0.45, { size: 11.5, italic: true, color: C.brassLt });
   }
 
-  // ---------- 19. Links ----------
+  // ---------- 19. Another Morse Trainer ----------
+  {
+    const s = base("This one is yours, so say so. Another Morse Trainer is the app you wrote because you spent as much time switching between practice tools as practicing. Koch method at 33 WPM from day one, every answer timed so it drills what is still slow, a guided Journey with an unlock map, confusion drills, hands-free practice for the car, sending on a touch key or a MIDI key or a Vail adapter with live decode, a mic decoder for the rig, pileups and contests, and a word-a-day puzzle. Free, GPL-3, no ads, no subscriptions, same feature set on both phones. iPhone and iPad are in open beta on TestFlight; Android is closed testing and the Discord is where invites go out, so point at the QR code. The vendored CW decoder is Jay Vana's, who is on the BKG roster as W6JY. As of September 11 the builds were iOS 1.3.0 and Android 1.15.0.");
+    title(s, "Another Morse Trainer", { sub: "Learn Morse. Hear Progress. Free and open source, on iPhone and Android." });
+    // left: logo + availability
+    card(s, M, 2.0, 3.5, 4.85);
+    s.addImage({ path: path.join(IMG, "logo-stacked.png"), x: M + 0.95, y: 2.2, w: 1.6, h: 2.22 });
+    body(s, "Free and open source (GPL-3). No ads, no subscriptions, same features on both phones.", M + 0.3, 4.6, 2.9, 0.9, { size: 12.5, align: "center" });
+    body(s, "iPhone & iPad", M + 0.3, 5.55, 2.9, 0.3, { size: 12.5, bold: true, color: C.brass, align: "center" });
+    body(s, "Open beta on TestFlight", M + 0.3, 5.82, 2.9, 0.3, { size: 12, color: C.muted, align: "center" });
+    body(s, "Android", M + 0.3, 6.15, 2.9, 0.3, { size: 12.5, bold: true, color: C.brass, align: "center" });
+    body(s, "Closed testing. Ask on the Discord.", M + 0.3, 6.42, 2.9, 0.3, { size: 12, color: C.muted, align: "center" });
+    // middle: what it does
+    const mx = M + 3.8, mw = 4.75;
+    card(s, mx, 2.0, mw, 4.85);
+    iconCircle(s, I.grad, mx + 0.3, 2.25, 0.6);
+    h3(s, "What it does", mx + 1.05, 2.35, mw - 1.3);
+    bullets(s, [
+      "Koch method at 33 WPM from day one, with every answer timed so it drills what is still slow.",
+      "A guided Journey with an unlock map, confusion drills for the pairs you mix up, and an arcade game or five.",
+      "Hands-free Listen & Learn for the car. Code plays, the answer is spoken.",
+      "Send it back on a touch key, a MIDI key, or a Vail adapter, with live decode. Live CW with real ops over the Vail network.",
+      "Point the mic at your rig and decode off the air. Run a simulated pileup, a timed contest, or the 5/13/20 WPM code exam.",
+      "Daily Dit: one five-letter word a day in Morse, same for everyone.",
+    ], mx + 0.3, 3.0, mw - 0.6, 3.75, { size: 12.5, gap: 4 });
+    // right: QR
+    const qx = mx + mw + 0.3, qw = W - M - qx;
+    card(s, qx, 2.0, qw, 4.85, C.card2);
+    const qs = 2.3;
+    s.addShape(pres.ShapeType.roundRect, { x: qx + (qw - qs) / 2 - 0.1, y: 2.25, w: qs + 0.2, h: qs + 0.2, fill: { color: "FFFFFF" }, line: { color: "FFFFFF" }, rectRadius: 0.1 });
+    s.addImage({ path: path.join(IMG, "amt-discord-qr.png"), x: qx + (qw - qs) / 2, y: 2.35, w: qs, h: qs });
+    body(s, "Scan to join the AMT Discord", qx + 0.2, 4.85, qw - 0.4, 0.35, { size: 14, bold: true, align: "center" });
+    s.addText("discord.gg/qgyk3TPUd9", { x: qx + 0.2, y: 5.2, w: qw - 0.4, h: 0.35, fontFace: "Courier New", fontSize: 12, color: C.brass, isTextBox: true, margin: 0, align: "center", valign: "top" });
+    body(s, "Beta invites, bug reports, feature chat, and the Android test spots.", qx + 0.3, 5.65, qw - 0.6, 0.6, { size: 11.5, color: C.muted, align: "center" });
+    s.addText("anothermorsetrainer.app", { x: qx + 0.2, y: 6.35, w: qw - 0.4, h: 0.35, fontFace: "Courier New", fontSize: 12, color: C.brass, isTextBox: true, margin: 0, align: "center", valign: "top" });
+  }
+
+  // ---------- 20. Links ----------
   {
     const s = base("Leave this up during questions. The docs site has the full-resolution rework photos and the menu reference; the releases page has the firmware and the CHIRP module; uvtools2 is the flasher. bkg.club/clubs.html is the version of this talk you can read out loud at a board meeting.");
     title(s, "Links, credits, 73", { sub: "Leave this slide up. Everything tonight came from these." });
