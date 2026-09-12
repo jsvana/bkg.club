@@ -500,10 +500,10 @@ function foot(s, text) {
 
   // ---------- 18. BKG ----------
   {
-    const s = base("Closer, two minutes. The Brass Knuckle Gang: pounding brass means sending Morse on a manual key. Founded 2025 in Northern Utah, now thirty members and worldwide. A law-abiding, FCC-respecting gang, and we mean the second part as sincerely as the first. Three bylaws. To join you work an existing member on 2 meter CW, give them the UTC date and time, and you get a number. Membership is voluntary every time; confirm someone wants in before you submit them.");
+    const s = base("Closer, two minutes. The Brass Knuckle Gang: pounding brass means sending Morse on a manual key. Founded 2025 in Northern Utah, now over four hundred members and worldwide. A law-abiding, FCC-respecting gang, and we mean the second part as sincerely as the first. Three bylaws. To join you work an existing member on 2 meter CW, give them the UTC date and time, and you get a number. Membership is voluntary every time; confirm someone wants in before you submit them.");
     title(s, "The Brass Knuckle Gang", { sub: "A law-abiding, FCC-respecting gang for amateur radio operators. 2 meter CW or bust." });
     s.addImage({ path: path.join(IMG, "bkg-logo.jpg"), x: M, y: 2.0, w: 3.6, h: 3.6 });
-    const facts = [["Founded", "2025, Northern Utah"], ["Territory", "144 MHz, worldwide"], ["Members", "30 and recruiting"], ["Mode", "CW only. Manual keys."]];
+    const facts = [["Founded", "2025, Northern Utah"], ["Territory", "144 MHz, worldwide"], ["Members", "400+ and recruiting"], ["Mode", "CW only. Manual keys."]];
     facts.forEach(([k, v], i) => {
       body(s, k, M, 5.8 + i * 0.27, 1.2, 0.27, { size: 11, bold: true, color: C.brass });
       body(s, v, M + 1.2, 5.8 + i * 0.27, 2.6, 0.27, { size: 11, color: C.muted });
