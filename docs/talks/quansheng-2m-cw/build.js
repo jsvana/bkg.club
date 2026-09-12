@@ -84,7 +84,7 @@ function foot(s, text) {
     s.addText("2m CW on a\n$30 Handheld", { x: M, y: 1.2, w: 7.5, h: 2.4, fontFace: HEAD, fontSize: 54, bold: true, color: C.brassLt, isTextBox: true, margin: 0, valign: "top", lineSpacingMultiple: 0.95 });
     body(s, "Modifying the Quansheng UV-K1 for real Morse code: the why, the how, the tools, and the parts.", M, 3.85, 7.3, 1.0, { size: 20, color: C.cream });
     body(s, "Justin · N9HO", M, 5.6, 7.3, 0.4, { size: 16, color: C.muted });
-    body(s, "Club meeting · 2026", M, 6.0, 7.3, 0.4, { size: 14, color: C.dim });
+    body(s, "CCARA Monthly Meeting · September 12, 2026", M, 6.0, 7.3, 0.4, { size: 14, color: C.dim });
   }
 
   // ---------- 2. Tonight ----------

@@ -4,7 +4,7 @@ A club-meeting deck on modifying the Quansheng UV-K1 for 2m CW with the NR7Y
 firmware, closing with a short pitch for the Brass Knuckle Gang.
 
 - `quansheng-2m-cw.pptx` is the deck (19 slides, 16:9, speaker notes on every
-  slide). Presenter: Justin, N9HO.
+  slide). Presenter: Justin, N9HO. First given at the CCARA monthly meeting, September 12, 2026.
 - `build.js` regenerates it with [pptxgenjs](https://github.com/gitbrent/PptxGenJS):
   `npm install pptxgenjs react react-dom react-icons sharp && node build.js`.
 
