@@ -251,7 +251,7 @@ function foot(s, text) {
     h3(s, "Parts", M + half + 1.35, 2.35, half - 1.3);
     bullets(s, [
       "Quansheng UV-K1 (see previous slide).",
-      "Two wires, about 50 mm and 80 mm, 22 AWG or thinner. Strip them out of the USB cable in the box.",
+      "Two wires, about 2 in and 3 in, 22 AWG or thinner. Strip them out of the USB cable in the box.",
       "A paddle or straight key with a 3.5 mm TRS plug.",
       "K5-style two-pin (Kenwood) programming cable.",
       "Laptop with Chrome or Chromium for the WebSerial flasher.",
@@ -340,14 +340,14 @@ function foot(s, text) {
 
   // ---------- 12. Add the wires ----------
   {
-    const s = base("Two wires, roughly 50 and 80 millimeters. Follow the photo: the blue wire runs from the solder blob on the left edge over to the pad near the resistor site by the jack, and the yellow wire runs from the headset jack pad down to gold pad number three of the four on the bottom edge, which is the SWDIO pad. Route the long one to the side of the button pads so it never sits under a key, and keep both flat so the display drops back over them. Stranded wire works but watch for stray strands at each end.");
-    title(s, "Step two: two wires on", { sub: "About 50 mm and 80 mm of anything 22 AWG or thinner. Tin the ends first." });
+    const s = base("Two wires, roughly two and three inches. Follow the photo: the blue wire runs from the solder blob on the left edge over to the pad near the resistor site by the jack, and the yellow wire runs from the headset jack pad down to gold pad number three of the four on the bottom edge, which is the SWDIO pad. Route the long one to the side of the button pads so it never sits under a key, and keep both flat so the display drops back over them. Stranded wire works but watch for stray strands at each end.");
+    title(s, "Step two: two wires on", { sub: "About 2 in and 3 in of anything 22 AWG or thinner. Tin the ends first." });
     s.addImage({ path: path.join(IMG, "k1_wires.jpg"), x: M, y: 1.9, w: 3.16, h: 4.8 });
     foot(s, "Photo: NR7Y CW Firmware Docs, UV-K1 rework page (CC BY-NC-SA 4.0). Wire colors are the author's; use whatever you have.");
     const rx = 4.15, rw = W - M - rx;
     const steps = [
-      ["Short wire (blue, ~50 mm)", "From the solder blob on the left edge of the board over to the pad beside the resistor site next to the headset jack. This carries the PTT line to the jack tip: dit."],
-      ["Long wire (yellow, ~80 mm)", "From the headset-jack pad down to gold pad 3 of the four along the bottom edge. That pad is SWDIO, which becomes the jack ring: dah."],
+      ["Short wire (blue, ~2 in)", "From the solder blob on the left edge of the board over to the pad beside the resistor site next to the headset jack. This carries the PTT line to the jack tip: dit."],
+      ["Long wire (yellow, ~3 in)", "From the headset-jack pad down to gold pad 3 of the four along the bottom edge. That pad is SWDIO, which becomes the jack ring: dah."],
       ["Route and flatten", "Run the long wire beside the button pads, never under a key. Keep both flat so the display frame seats over them. Snip strays; stranded wire loves to short."],
       ["Match the photo", "Before closing up, compare against the full-res photo on the docs page. Pad-for-pad. Then a quick continuity check from the jack to each pad."],
     ];
