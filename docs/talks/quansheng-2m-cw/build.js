@@ -83,7 +83,7 @@ function foot(s, text) {
     s.addImage({ path: path.join(IMG, "k1_wires.jpg"), x: 8.45, y: 0.55, w: 4.24, h: 6.4 });
     s.addText("2m CW on a\n$30 Handheld", { x: M, y: 1.2, w: 7.5, h: 2.4, fontFace: HEAD, fontSize: 54, bold: true, color: C.brassLt, isTextBox: true, margin: 0, valign: "top", lineSpacingMultiple: 0.95 });
     body(s, "Modifying the Quansheng UV-K1 for real Morse code: the why, the how, the tools, and the parts.", M, 3.85, 7.3, 1.0, { size: 20, color: C.cream });
-    body(s, "Presenter: Your Name · CALLSIGN", M, 5.6, 7.3, 0.4, { size: 16, color: C.muted });
+    body(s, "Justin · N9HO", M, 5.6, 7.3, 0.4, { size: 16, color: C.muted });
     body(s, "Club meeting · 2026", M, 6.0, 7.3, 0.4, { size: 14, color: C.dim });
   }
 
@@ -477,7 +477,7 @@ function foot(s, text) {
 
   // ---------- 17. Safety board ----------
   {
-    const s = base("Lighten it up before the closer. The gang keeps a 'days since we broke a Quansheng' sign on the website with an incident log, names named. Three so far. Each one maps to a step you just saw: pry at the right edge, heat instead of pull, and door before ribbon. If you break one tonight you confess on Discord and an officer resets the sign.");
+    const s = base("Lighten it up before the closer. The gang keeps a 'days since we broke a Quansheng' sign on the website with an incident log, names named. Three so far, and incident number one is you, so own it: that is the whole point of the board. Each one maps to a step you just saw: pry at the right edge, heat instead of pull, and door before ribbon. If you break one tonight you confess on Discord and an officer resets the sign.");
     title(s, "Days since we broke a Quansheng", { sub: "The gang keeps a safety board. Names are named. Every incident is a slide you just saw." });
     const inc = [
       ["#001", "22 Aug 2026", "N9HO", "Tore the screen clean off one on the floor of the Huntsville Hamfest. At the ARRL National Convention. In front of everybody.", "Pry at the lower edge, front face down, and stop when the volume stem clears."],
