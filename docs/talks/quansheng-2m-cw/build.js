@@ -135,7 +135,7 @@ function foot(s, text) {
 
   // ---------- 4. Why the Quansheng ----------
   {
-    const s = base("The stock radio will not send CW at all. What makes it interesting is the open-source lineage: DualTachyon reverse engineered the original K5 and released the first open firmware, egzumer built the feature-rich custom firmware everyone knows, F4HWN and muzkr ported it to the newer K5 v3 and K1 hardware as Fusion, and NR7Y layered a real CW transceiver on top of that. All Apache 2.0.");
+    const s = base("The stock radio will not send CW at all. What makes it interesting is the open-source lineage: DualTachyon reverse engineered the original K5 and released the first open firmware, egzumer built the feature-rich custom firmware everyone knows, F4HWN and muzkr ported it to the newer K5 v3 and K1 hardware as Fusion, and NR7Y layered a real CW transceiver on top of that. All Apache 2.0. NR7Y is also a BKG member, which is a nice line to drop here.");
     title(s, "Why the Quansheng?", { sub: "Out of the box it will not send CW at all. What it has is a price tag and an open-source firmware family." });
     card(s, M, 2.0, 5.6, 4.75);
     iconCircle(s, I.money, M + 0.3, 2.3, 0.7);
@@ -500,13 +500,13 @@ function foot(s, text) {
 
   // ---------- 18. BKG ----------
   {
-    const s = base("Closer, two minutes. The Brass Knuckle Gang: pounding brass means sending Morse on a manual key. Founded 2025 in Northern Utah, now over four hundred members and worldwide. A law-abiding, FCC-respecting gang, and we mean the second part as sincerely as the first. Three bylaws. To join you work an existing member on 2 meter CW, give them the UTC date and time, and you get a number. Membership is voluntary every time; confirm someone wants in before you submit them.");
+    const s = base("Closer, two minutes. The Brass Knuckle Gang: pounding brass means sending Morse on a manual key. Founded 2025 in Northern Utah. As of today's site build there are 458 members across 42 states and 7 other countries, and the firmware author NR7Y is on the roster himself. A law-abiding, FCC-respecting gang, and we mean the second part as sincerely as the first. Three bylaws. To join you work an existing member on 2 meter CW, give them the UTC date and time, and you get a number. Membership is voluntary every time; confirm someone wants in before you submit them.");
     title(s, "The Brass Knuckle Gang", { sub: "A law-abiding, FCC-respecting gang for amateur radio operators. 2 meter CW or bust." });
     s.addImage({ path: path.join(IMG, "bkg-logo.jpg"), x: M, y: 2.0, w: 3.6, h: 3.6 });
-    const facts = [["Founded", "2025, Northern Utah"], ["Territory", "144 MHz, worldwide"], ["Members", "400+ and recruiting"], ["Mode", "CW only. Manual keys."]];
+    const facts = [["Founded", "2025, Northern Utah"], ["Territory", "144 MHz, worldwide"], ["Members", "458 and recruiting"], ["Reach", "42 states, 7 DX countries"], ["Mode", "CW only. Manual keys."]];
     facts.forEach(([k, v], i) => {
-      body(s, k, M, 5.8 + i * 0.27, 1.2, 0.27, { size: 11, bold: true, color: C.brass });
-      body(s, v, M + 1.2, 5.8 + i * 0.27, 2.6, 0.27, { size: 11, color: C.muted });
+      body(s, k, M, 5.72 + i * 0.27, 1.2, 0.27, { size: 11, bold: true, color: C.brass });
+      body(s, v, M + 1.2, 5.72 + i * 0.27, 2.6, 0.27, { size: 11, color: C.muted });
     });
     const rx = M + 4.0, half = (W - M - rx - 0.3) / 2;
     card(s, rx, 2.0, half, 4.85);
@@ -566,11 +566,12 @@ function foot(s, text) {
     const l2 = [
       ["Home, bylaws, roster, map", "bkg.club"],
       ["The pitch for clubs, spelled correctly", "bkg.club/clubs.html"],
-      ["Recruit form and downline tree", "bkg.club/recruit.html  ·  bkg.club/tree.html"],
+      ["Recruit form, downline tree, nearby finder", "bkg.club/recruit.html  ·  /tree.html  ·  /nearby.html"],
       ["Ragchew with the gang", "discord.gg/wDs5dth22k"],
+      ["BKG intro video (YouTube short)", "youtube.com/shorts/2ZWex-8fG6M"],
     ];
     l2.forEach(([t, u], i) => {
-      const y = 3.0 + i * 0.85;
+      const y = 3.0 + i * 0.74;
       body(s, t, rx + 0.3, y, half - 0.6, 0.35, { size: 14, bold: true });
       s.addText(u, { x: rx + 0.3, y: y + 0.35, w: half - 0.6, h: 0.35, fontFace: "Courier New", fontSize: 12, color: C.brass, isTextBox: true, margin: 0, valign: "top" });
     });
