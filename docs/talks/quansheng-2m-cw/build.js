@@ -90,7 +90,7 @@ function foot(s, text) {
   // ---------- 2. Tonight ----------
   {
     const s = base("Roadmap. This is an interest talk, not a workshop, so keep the rework steps brisk and visual. Spend most of the time on the middle three: the firmware, the mod, and getting on the air. The gang is the closer, keep it to a couple of minutes.");
-    title(s, "Tonight");
+    title(s, "On the agenda");
     const items = [
       ["Why 2 meter CW", "The band is empty, and this mode is local by physics."],
       ["Why this radio", "Thirty dollars, everywhere, and fully open-source firmware."],
@@ -580,7 +580,7 @@ function foot(s, text) {
   // ---------- 20. Links ----------
   {
     const s = base("Leave this up during questions. The docs site has the full-resolution rework photos and the menu reference; the releases page has the firmware and the CHIRP module; uvtools2 is the flasher. bkg.club/clubs.html is the version of this talk you can read out loud at a board meeting.");
-    title(s, "Links, credits, 73", { sub: "Leave this slide up. Everything tonight came from these." });
+    title(s, "Links, credits, 73", { sub: "Leave this slide up. Everything in this talk came from these." });
     const half = (W - 2 * M - 0.3) / 2;
     card(s, M, 2.0, half, 4.85);
     iconCircle(s, I.link, M + 0.3, 2.25, 0.6);
