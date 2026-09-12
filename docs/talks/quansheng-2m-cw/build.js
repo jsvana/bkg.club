@@ -79,7 +79,7 @@ function foot(s, text) {
 
   // ---------- 1. Title ----------
   {
-    const s = base("Open with the radio in your hand. Hold it up. Tell them it cost thirty dollars, it does real CW, and by the end of the night they will know how to build one. Tonight is about one goal: more operators sending Morse on 2 meters than there were last year. Everything else is a side effect.");
+    const s = base("Open with the radio in your hand. Hold it up. Tell them it cost thirty dollars, it does real CW, and the goal is that they go home wanting to build one. This is a pitch, not a build night: nobody is soldering tonight. It is about one goal: more operators sending Morse on 2 meters than there were last year. Everything else is a side effect.");
     s.addImage({ path: path.join(IMG, "k1_wires.jpg"), x: 8.45, y: 0.55, w: 4.24, h: 6.4 });
     s.addText("2m CW on a\n$30 Handheld", { x: M, y: 1.2, w: 7.5, h: 2.4, fontFace: HEAD, fontSize: 54, bold: true, color: C.brassLt, isTextBox: true, margin: 0, valign: "top", lineSpacingMultiple: 0.95 });
     body(s, "Modifying the Quansheng UV-K1 for real Morse code: the why, the how, the tools, and the parts.", M, 3.85, 7.3, 1.0, { size: 20, color: C.cream });
@@ -89,7 +89,7 @@ function foot(s, text) {
 
   // ---------- 2. Tonight ----------
   {
-    const s = base("Roadmap. Spend most of the time on the middle three: the firmware, the mod, and getting on the air. The gang is the closer, keep it to a couple of minutes.");
+    const s = base("Roadmap. This is an interest talk, not a workshop, so keep the rework steps brisk and visual. Spend most of the time on the middle three: the firmware, the mod, and getting on the air. The gang is the closer, keep it to a couple of minutes.");
     title(s, "Tonight");
     const items = [
       ["Why 2 meter CW", "The band is empty, and this mode is local by physics."],
@@ -142,7 +142,7 @@ function foot(s, text) {
     h3(s, "Cheap enough to open", M + 0.3, 3.15, 5.0);
     bullets(s, [
       "About $30 delivered. Less than the club spends on coffee.",
-      "Sold everywhere, so a build night can order five identical radios.",
+      "Sold everywhere, so a club build night could order five identical radios.",
       "Very easy to open: two screws and a pry at one edge.",
       "The MCU is fully documented by the community, so firmware authors can drive the hardware directly.",
       "If someone destroys one, the club is out $30 and up one member who has seen the inside of a radio.",
@@ -212,8 +212,8 @@ function foot(s, text) {
 
   // ---------- 7. Three ways to key it ----------
   {
-    const s = base("You do not have to open the radio to try this. PTT and side button works on a stock radio the day you flash it. The USB-C cable is a passive custom cable, no electronics, but it is very sensitive to RF from your own transmitter and can lock into key-down. The rework is what we are doing tonight: any off-the-shelf paddle plugs straight into the headset jack.");
-    title(s, "Three ways to key it", { sub: "Pick by how much you want to open the radio. Tonight we do the third one." });
+    const s = base("You do not have to open the radio to try this. PTT and side button works on a stock radio the day you flash it. The USB-C cable is a passive custom cable, no electronics, but it is very sensitive to RF from your own transmitter and can lock into key-down. The rework is what the rest of the talk walks through: any off-the-shelf paddle plugs straight into the headset jack.");
+    title(s, "Three ways to key it", { sub: "Pick by how much you want to open the radio. The rest of this talk walks through the third one." });
     const cols = [
       [I.hand, "PTT and side button", "No hardware at all", ["PTT is dah, Side 1 is dit. Iambic keyer still works.", "Also \"PTT HandKey\" for straight-key style.", "Try CW the day you flash. Clumsy for real QSOs."]],
       [I.usb, "USB-C to TRS cable", "Custom passive cable, radio stays closed", ["D+ to tip (dit), D- to ring (dah), ground to sleeve.", "No electronics. You will have to build it.", "Very sensitive to your own RF. Can lock into key-down, so keep it short, use medium power."]],
@@ -318,7 +318,7 @@ function foot(s, text) {
   // ---------- 11. Remove the resistors ----------
   {
     const s = base("Two tiny surface-mount resistors next to the headset jack, circled in the photo. Put a dab of solder on the tip to transfer heat, then heat one end and the other in turn until the part slides off, or lay a wide tip across both ends at once. Lift with tweezers; never pull. The failure mode is lifting the copper pad with the resistor, and one of our members did exactly that: went in for two resistors, came out with zero pads. NR7Y's line: the rework is technically reversible, except the resistors vanish the moment they leave the board.");
-    title(s, "Step one: two resistors off", { sub: "The steadiest hands in the room take the first one. Everyone else crowds around." });
+    title(s, "Step one: two resistors off", { sub: "The only step that needs a steady hand. Two tiny parts, one careful minute." });
     s.addImage({ path: path.join(IMG, "k1_resistors.jpg"), x: M, y: 1.9, w: 3.63, h: 4.8 });
     foot(s, "Photo: NR7Y CW Firmware Docs, UV-K1 rework page (CC BY-NC-SA 4.0). The full-resolution version is on the docs site.");
     const rx = 4.6, rw = W - M - rx;
@@ -477,7 +477,7 @@ function foot(s, text) {
 
   // ---------- 17. Safety board ----------
   {
-    const s = base("Lighten it up before the closer. The gang keeps a 'days since we broke a Quansheng' sign on the website with an incident log, names named. Three so far, and incident number one is you, so own it: that is the whole point of the board. Each one maps to a step you just saw: pry at the right edge, heat instead of pull, and door before ribbon. If you break one tonight you confess on Discord and an officer resets the sign.");
+    const s = base("Lighten it up before the closer. The gang keeps a 'days since we broke a Quansheng' sign on the website with an incident log, names named. Three so far, and incident number one is you, so own it: that is the whole point of the board. Each one maps to a step you just saw: pry at the right edge, heat instead of pull, and door before ribbon. If you break one, you confess on Discord and an officer resets the sign.");
     title(s, "Days since we broke a Quansheng", { sub: "The gang keeps a safety board. Names are named. Every incident is a slide you just saw." });
     const inc = [
       ["#001", "22 Aug 2026", "N9HO", "Tore the screen clean off one on the floor of the Huntsville Hamfest. At the ARRL National Convention. In front of everybody.", "Pry at the lower edge, front face down, and stop when the volume stem clears."],

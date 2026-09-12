@@ -1,6 +1,6 @@
 # Talk: 2m CW on a $30 Handheld
 
-A club-meeting deck on modifying the Quansheng UV-K1 for 2m CW with the NR7Y
+An interest talk (not a build-night guide) on modifying the Quansheng UV-K1 for 2m CW with the NR7Y
 firmware, closing with a short pitch for the Brass Knuckle Gang.
 
 - `quansheng-2m-cw.pptx` is the deck (19 slides, 16:9, speaker notes on every
