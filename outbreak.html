@@ -699,7 +699,7 @@
             const busiest = months.slice().sort((a, b) => b.n - a.n)[0];
             const rows = [
                 ['Pathogen', 'Brassus knucklus (BKG)'],
-                ['Transmission', 'Simplex, hamfest handshakes, POTA activations'],
+                ['Transmission', 'Simplex, hamfest handshakes, POTA and SOTA activations'],
                 ['Patient zero', qrz(cases[0].call) + ' in ' + esc(placeOf(cases[0]))],
                 ['Incubation', avgInc == null ? '<span class="ob-muted">unknown</span>' : plural(avgInc, 'day') + ' avg, sponsor to recruit'],
                 ['Case interval', lastGap == null ? '—' : plural(lastGap, 'day') + ' between the last two cases'],
