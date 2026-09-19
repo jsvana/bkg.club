@@ -71,14 +71,13 @@
             <button type="button" class="tree-ctrl ob-btn" id="obPlay" aria-label="Play or pause the outbreak replay">▶ PLAY</button>
             <button type="button" class="tree-ctrl ob-btn" id="obRestart" aria-label="Restart from patient zero">⟲ DAY 0</button>
             <button type="button" class="tree-ctrl ob-btn" id="obEnd" aria-label="Jump to today">⏭ TODAY</button>
-            <label class="ob-speed">SPEED
-                <select id="obSpeed" aria-label="Playback speed">
-                    <option value="0.5">½×</option>
-                    <option value="1" selected>1×</option>
-                    <option value="2">2×</option>
-                    <option value="4">4×</option>
-                </select>
-            </label>
+            <div class="ob-speed" role="group" aria-label="Playback speed" id="obSpeed">
+                <span class="ob-speed-label">SPEED</span>
+                <button type="button" class="ob-speed-btn" data-speed="0.5" aria-pressed="false">½×</button>
+                <button type="button" class="ob-speed-btn is-on" data-speed="1" aria-pressed="true">1×</button>
+                <button type="button" class="ob-speed-btn" data-speed="2" aria-pressed="false">2×</button>
+                <button type="button" class="ob-speed-btn" data-speed="4" aria-pressed="false">4×</button>
+            </div>
             <div class="ob-day">
                 <span class="ob-day-num" id="obDayNum">DAY 0</span>
                 <span class="ob-day-date" id="obDayDate">—</span>
@@ -515,7 +514,7 @@
             const title = document.createElementNS(SVG_NS, 'title');
             title.textContent = c.call + ' · BKG #' + c.num + ' · ' + placeOf(c) + ' · ' + fmtDate(c.day);
             g.appendChild(ring); g.appendChild(core); g.appendChild(title);
-            g.addEventListener('click', e => { e.stopPropagation(); selectedCase = selectedCase === c ? null : c; selectedTurf = null; render(cur); });
+            g.addEventListener('click', e => { e.stopPropagation(); selectedCase = selectedCase === c ? null : c; selectedTurf = null; render(cur, true); });
             dotsEl.appendChild(g);
             c.dotEl = g;
             const s = c.sponsor && byCall[c.sponsor];
@@ -601,15 +600,24 @@
         const stateCount = {}, dxCount = {};
         function infectedAt(t) { return cases.filter(c => c.t <= t); }
 
-        function render(t) {
+        // The map, chart cursor and day counter update every frame; the panels
+        // (stats, log, spreaders, profile, case file) are rebuilt only when a
+        // case appears, the selection changes, or playback stops. Rebuilding
+        // them every frame is what made the replay crawl on phones.
+        let lastHeavyN = -1;
+        function render(t, force) {
             cur = Math.max(0, Math.min(T, Math.round(t)));
             const inf = infectedAt(cur);
             const n = inf.length;
             const date = new Date(day0.getTime() + cur * DAY_MS);
+            const heavy = force || n !== lastHeavyN;
+            lastHeavyN = n;
 
             document.getElementById('obDayNum').textContent = 'DAY ' + cur;
             document.getElementById('obDayDate').textContent = fmtDate(date);
             document.getElementById('obScrub').value = cur;
+            const daysTile = document.getElementById('obDaysTile');
+            if (daysTile) daysTile.textContent = cur;
 
             // map
             Object.keys(stateCount).forEach(k => delete stateCount[k]);
@@ -640,6 +648,17 @@
             });
             setClass(mapEl, 'ob-has-sel', !!selectedCase);
 
+            // chart cursor (cheap, every frame)
+            document.getElementById('obCurve').setAttribute('d', curvePath(cur));
+            document.getElementById('obCurveFill').setAttribute('d', curvePath(cur) + ' V' + (CH - PB) + ' H' + xOf(0) + ' Z');
+            const cx = xOf(cur), cy = yOf(n);
+            const cursor = document.getElementById('obCursor');
+            cursor.setAttribute('x1', cx); cursor.setAttribute('x2', cx);
+            const dot = document.getElementById('obDot');
+            dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
+
+            if (!heavy) return;
+
             // stats
             const territories = Object.keys(stateCount).length + Object.keys(dxCount).length;
             const direct = inf.reduce((s, c) => s + c.recruits.filter(r => r.t <= cur).length, 0);
@@ -654,11 +673,11 @@
                 { num: territories, label: territories === 1 ? 'Territory' : 'Territories' },
                 { num: r0 == null ? '?' : r0.toFixed(2), label: 'R₀ (per case)' },
                 { num: doubling == null ? '—' : doubling + 'd', label: 'Doubling time' },
-                { num: cur, label: 'Days since P0' },
+                { num: cur, label: 'Days since P0', id: 'obDaysTile' },
                 { num: '0%', label: 'Cure progress', cls: 'ob-tile-cure' },
             ];
             document.getElementById('obStats').innerHTML = tiles.map(s =>
-                '<div class="tree-stat' + (s.cls ? ' ' + s.cls : '') + '"><div class="tree-stat-num">' + esc(s.num) +
+                '<div class="tree-stat' + (s.cls ? ' ' + s.cls : '') + '"><div class="tree-stat-num"' + (s.id ? ' id="' + s.id + '"' : '') + '>' + esc(s.num) +
                 '</div><div class="tree-stat-label">' + esc(s.label) + '</div></div>').join('');
 
             // latest case
@@ -671,15 +690,6 @@
                 '<div class="ob-case-row">🦠 Vector: ' + (latest.sponsor ? qrz(latest.sponsor) : '<span class="ob-muted">unknown / spontaneous</span>') + '</div>' +
                 (latest.sponsor && byCall[latest.sponsor] ? '<div class="ob-case-row">⏱ Incubation: ' + plural(Math.max(0, latest.t - byCall[latest.sponsor].t), 'day') + '</div>' : '')
             ) : 'No cases on file.';
-
-            // chart
-            document.getElementById('obCurve').setAttribute('d', curvePath(cur));
-            document.getElementById('obCurveFill').setAttribute('d', curvePath(cur) + ' V' + (CH - PB) + ' H' + xOf(0) + ' Z');
-            const cx = xOf(cur), cy = yOf(n);
-            const cursor = document.getElementById('obCursor');
-            cursor.setAttribute('x1', cx); cursor.setAttribute('x2', cx);
-            const dot = document.getElementById('obDot');
-            dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
 
             // super-spreaders
             const spreaders = inf.map(c => ({ c, k: c.recruits.filter(r => r.t <= cur).length })).filter(x => x.k > 0)
@@ -775,50 +785,71 @@
             stateEls[abbr].addEventListener('click', () => {
                 selectedTurf = selectedTurf === abbr ? null : abbr;
                 selectedCase = null;
-                render(cur);
+                render(cur, true);
             });
         });
 
         // ---- Playback --------------------------------------------------------------
+        // Time-based: the replay covers the whole outbreak in BASE_SECONDS at 1×,
+        // however fast or slow the device renders frames. `pos` keeps the
+        // fractional day so slow speeds don't stall on whole-day rounding.
         const scrub = document.getElementById('obScrub');
         scrub.max = T;
         const playBtn = document.getElementById('obPlay');
-        const speedSel = document.getElementById('obSpeed');
-        let timer = null;
-        const BASE_SECONDS = 14; // full replay at 1×
-        function tick() {
-            const perTick = (T / (BASE_SECONDS * 25)) * Number(speedSel.value);
-            if (cur >= T) { stop(); return; }
-            render(Math.min(T, cur + Math.max(perTick, 0.5)));
+        const BASE_SECONDS = 14;
+        let speed = 1;
+        let pos = 0;
+        let raf = null, lastTs = null;
+        function frame(ts) {
+            if (lastTs == null) lastTs = ts;
+            const dt = Math.min(0.5, (ts - lastTs) / 1000);
+            lastTs = ts;
+            pos += dt * (T / BASE_SECONDS) * speed;
+            if (pos >= T) { render(T, true); stop(); return; }
+            render(pos);
+            raf = requestAnimationFrame(frame);
         }
         let autoplay = null;   // pending kick-off; any user action cancels it
         function play() {
             clearTimeout(autoplay); autoplay = null;
-            if (cur >= T) render(0);
-            if (timer) return;
-            timer = setInterval(tick, 40);
+            if (cur >= T) { render(0, true); pos = 0; }
+            if (raf) return;
+            pos = cur; lastTs = null;
+            raf = requestAnimationFrame(frame);
             playBtn.textContent = '❚❚ PAUSE';
         }
         function stop() {
             clearTimeout(autoplay); autoplay = null;
-            if (timer) clearInterval(timer);
-            timer = null;
+            if (raf) cancelAnimationFrame(raf);
+            raf = null; lastTs = null;
             playBtn.textContent = cur >= T ? '⟲ REPLAY' : '▶ PLAY';
+            render(cur, true);
         }
-        playBtn.addEventListener('click', () => timer ? stop() : play());
-        document.getElementById('obRestart').addEventListener('click', () => { stop(); render(0); });
-        document.getElementById('obEnd').addEventListener('click', () => { stop(); render(T); });
-        scrub.addEventListener('input', () => { stop(); render(Number(scrub.value)); });
+        function jump(t) { render(t, true); stop(); pos = cur; }
+        playBtn.addEventListener('click', () => raf ? stop() : play());
+        document.getElementById('obRestart').addEventListener('click', () => jump(0));
+        document.getElementById('obEnd').addEventListener('click', () => jump(T));
+        scrub.addEventListener('input', () => jump(Number(scrub.value)));
+        document.querySelectorAll('.ob-speed-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                speed = Number(btn.dataset.speed) || 1;
+                document.querySelectorAll('.ob-speed-btn').forEach(b => {
+                    const on = b === btn;
+                    b.classList.toggle('is-on', on);
+                    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                });
+            });
+        });
         document.addEventListener('keydown', e => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-            if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
-            if (e.key === 'ArrowRight') { stop(); render(cur + (e.shiftKey ? 30 : 1)); }
-            if (e.key === 'ArrowLeft') { stop(); render(cur - (e.shiftKey ? 30 : 1)); }
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            if (e.key === ' ') { e.preventDefault(); raf ? stop() : play(); }
+            if (e.key === 'ArrowRight') jump(cur + (e.shiftKey ? 30 : 1));
+            if (e.key === 'ArrowLeft') jump(cur - (e.shiftKey ? 30 : 1));
         });
 
         const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (reduceMotion) { render(T); stop(); }
-        else { render(0); autoplay = setTimeout(play, 900); }
+        if (reduceMotion) { render(T, true); stop(); }
+        else { render(0, true); autoplay = setTimeout(play, 900); }
     })();
     </script>
 </body>
