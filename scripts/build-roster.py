@@ -11,11 +11,13 @@ between their own START/END markers (downline, geo, and outbreak data).
 """
 
 import csv
+import http.client
 import io
 import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -346,15 +348,37 @@ def apply_location_overrides(
         )
 
 
+# A full build is one QRZ request per member (500+), and QRZ drops or times
+# out a handful of connections per day. Retry each request a few times with
+# a short backoff before giving up on it, so one hiccup neither kills the
+# deploy nor silently loses a member's location for that build.
+FETCH_ATTEMPTS = 3
+FETCH_BACKOFF_SECONDS = (2, 5)
+
+
+def _fetch_with_retry(req: urllib.request.Request, *, timeout: float, what: str) -> bytes | None:
+    """GET a URL, retrying transient network failures. Returns None if all attempts fail."""
+    for attempt in range(1, FETCH_ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.read()
+        except (OSError, http.client.HTTPException) as exc:
+            # OSError covers urllib.error.URLError, socket timeouts and
+            # connection resets; HTTPException covers RemoteDisconnected /
+            # BadStatusLine when the server hangs up mid-response.
+            if attempt < FETCH_ATTEMPTS:
+                delay = FETCH_BACKOFF_SECONDS[min(attempt - 1, len(FETCH_BACKOFF_SECONDS) - 1)]
+                print(f"  {what} failed (attempt {attempt}/{FETCH_ATTEMPTS}): {exc}; retrying in {delay}s", file=sys.stderr)
+                time.sleep(delay)
+            else:
+                print(f"  {what} failed after {FETCH_ATTEMPTS} attempts: {exc}", file=sys.stderr)
+    return None
+
+
 def _qrz_get_raw(params: dict[str, str]) -> bytes | None:
     url = QRZ_XML_URL + "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"User-Agent": "BKG-Roster-Builder/1.0"})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return resp.read()
-    except (urllib.error.URLError, TimeoutError) as exc:
-        print(f"  QRZ request failed: {exc}", file=sys.stderr)
-        return None
+    return _fetch_with_retry(req, timeout=15, what="QRZ request")
 
 
 def _qrz_get(params: dict[str, str]) -> ET.Element | None:
@@ -499,12 +523,7 @@ def download_mugshot(callsign: str, url: str) -> str | None:
     filename = f"{callsign}{suffix}"
     dest = MUGSHOT_DIR / filename
     req = urllib.request.Request(url, headers={"User-Agent": "BKG-Roster-Builder/1.0"})
-    try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = resp.read()
-    except (urllib.error.URLError, TimeoutError) as exc:
-        print(f"  QRZ image download failed for {callsign}: {exc}", file=sys.stderr)
-        return None
+    data = _fetch_with_retry(req, timeout=20, what=f"QRZ image download for {callsign}")
     if not data:
         return None
     dest.write_bytes(data)
