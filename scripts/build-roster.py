@@ -5,6 +5,9 @@ The roster section of index.html is rebuilt between <!-- ROSTER:START --> and
 <!-- ROSTER:END --> markers. The members count is updated between
 <!-- MEMBER_COUNT:START --> and <!-- MEMBER_COUNT:END -->. members.txt is a
 Ham2K PoLo callsign notes file (auto-generated, not manually edited).
+
+tree.html, nearby.html and outbreak.html each get a JSON payload injected
+between their own START/END markers (downline, geo, and outbreak data).
 """
 
 import csv
@@ -27,6 +30,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 INDEX_PATH = REPO_ROOT / "index.html"
 TREE_PATH = REPO_ROOT / "tree.html"
 NEARBY_PATH = REPO_ROOT / "nearby.html"
+OUTBREAK_PATH = REPO_ROOT / "outbreak.html"
 MEMBERS_TXT_PATH = REPO_ROOT / "members.txt"
 NAME_OVERRIDES_PATH = REPO_ROOT / "name-overrides.txt"
 LOCATION_OVERRIDES_PATH = REPO_ROOT / "location-overrides.txt"
@@ -857,6 +861,20 @@ def grid_to_latlon(grid: str) -> tuple[float, float] | None:
     return (round(lat, 4), round(lon, 4))
 
 
+def member_latlon(member: dict) -> tuple[float, float] | None:
+    """Coarse public coordinates for a member, or None.
+
+    Grid-square center when QRZ lists a grid (deliberately coarse), else the
+    QRZ lat/lon rounded to 2 decimals (~1 km). Members with a location
+    override have had their QRZ coords cleared, so they come back None.
+    """
+    grid = member.get("grid")
+    latlon = grid_to_latlon(grid) if grid else None
+    if latlon is None and member.get("lat") is not None and member.get("lon") is not None:
+        latlon = (round(member["lat"], 2), round(member["lon"], 2))
+    return latlon
+
+
 def render_geo_data(members: list[dict]) -> str:
     """Build the JSON geo data consumed by nearby.html (#bkg-geo-data):
 
@@ -869,9 +887,7 @@ def render_geo_data(members: list[dict]) -> str:
     entries = []
     for member in sorted(members, key=lambda m: m["number"]):
         grid = member.get("grid")
-        latlon = grid_to_latlon(grid) if grid else None
-        if latlon is None and member.get("lat") is not None:
-            latlon = (round(member["lat"], 2), round(member["lon"], 2))
+        latlon = member_latlon(member)
         if latlon is None:
             continue
         entry = {
@@ -901,6 +917,99 @@ def update_nearby(members: list[dict]) -> None:
         render_geo_data(members),
     )
     NEARBY_PATH.write_text(html)
+
+
+# Join Date cell formats seen (or plausible) on the roster sheet. Google
+# Sheets exports dates as typed, so a mix of these is expected.
+JOIN_DATE_FORMATS = (
+    "%Y-%m-%d", "%Y/%m/%d", "%m/%d/%Y", "%m/%d/%y", "%m-%d-%Y", "%m-%d-%y",
+    "%b %d, %Y", "%B %d, %Y", "%b %d %Y", "%B %d %Y", "%d %b %Y", "%d %B %Y",
+    "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%m/%d/%Y %H:%M:%S",
+)
+
+
+def parse_join_date(raw: str) -> str | None:
+    """Normalize a roster 'Join Date' cell to 'YYYY-MM-DD', or None if unreadable."""
+    text = (raw or "").strip()
+    if not text:
+        return None
+    for fmt in JOIN_DATE_FORMATS:
+        try:
+            return datetime.strptime(text, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    # Last resort: a YYYY-MM-DD prefix on something longer (e.g. an ISO timestamp with tz)
+    match = re.match(r"(\d{4})-(\d{2})-(\d{2})", text)
+    if match:
+        try:
+            return datetime(int(match[1]), int(match[2]), int(match[3])).strftime("%Y-%m-%d")
+        except ValueError:
+            return None
+    return None
+
+
+def render_outbreak_data(members: list[dict]) -> str:
+    """Build the JSON outbreak data consumed by outbreak.html (#bkg-outbreak-data):
+
+    [{"call", "name", "num", "date", "state", "dx", "flag", "sponsor", "lat", "lon"}, ...]
+    ordered by member number. "date" is the normalized join date or null
+    (the page interpolates missing dates from neighbouring member numbers),
+    "state" is the two-letter US state for members on the map, "dx" the
+    country for international members (with "flag"), "sponsor" the
+    recruiting member's callsign or null — the transmission chain — and
+    "lat"/"lon" the same coarse coordinates nearby.html gets (present only
+    when QRZ had a grid or lat/lon; the page falls back to the state).
+    """
+    entries = []
+    dated = 0
+    located = 0
+    for member in sorted(members, key=lambda m: m["number"]):
+        date = parse_join_date(member.get("join_date", ""))
+        if date:
+            dated += 1
+        elif member.get("join_date"):
+            print(
+                f"  Unreadable join date for {member['callsign']}: {member['join_date']!r}",
+                file=sys.stderr,
+            )
+        entry = {
+            "call": member["callsign"],
+            "name": member["name"],
+            "num": member["number"],
+            "date": date,
+            "state": None,
+            "dx": None,
+            "sponsor": member["sponsor_member"]["callsign"] if member.get("sponsor_member") else None,
+        }
+        bucket = member_map_bucket(member)
+        if bucket and bucket[0] == "state":
+            entry["state"] = bucket[1]
+        elif bucket:
+            entry["dx"] = bucket[1]
+            entry["flag"] = COUNTRY_FLAGS.get(bucket[1].lower(), "🌍")
+        latlon = member_latlon(member)
+        if latlon is not None:
+            entry["lat"], entry["lon"] = latlon
+            located += 1
+        entries.append(entry)
+    print(f"  Join dates parsed for {dated}/{len(entries)} members", file=sys.stderr)
+    print(f"  Outbreak coords for {located}/{len(entries)} members", file=sys.stderr)
+    return json.dumps(entries, separators=(",", ":"), ensure_ascii=False)
+
+
+def update_outbreak(members: list[dict]) -> None:
+    """Inject the outbreak JSON into outbreak.html. No-op if outbreak.html is absent."""
+    if not OUTBREAK_PATH.is_file():
+        print(f"  {OUTBREAK_PATH.name} not found, skipping outbreak build", file=sys.stderr)
+        return
+    html = OUTBREAK_PATH.read_text()
+    html = replace_between(
+        html,
+        "<!-- OUTBREAK_DATA:START -->",
+        "<!-- OUTBREAK_DATA:END -->",
+        render_outbreak_data(members),
+    )
+    OUTBREAK_PATH.write_text(html)
 
 
 US_STATE_NAMES = {
@@ -1052,6 +1161,9 @@ def main() -> int:
 
     update_nearby(members)
     print(f"Updated {NEARBY_PATH.name}")
+
+    update_outbreak(members)
+    print(f"Updated {OUTBREAK_PATH.name}")
 
     MEMBERS_TXT_PATH.write_text(render_members_txt(members))
     print(f"Wrote {MEMBERS_TXT_PATH.name}")
