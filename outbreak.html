@@ -155,13 +155,19 @@
             <text class="dx-inset-title" x="829" y="538" text-anchor="middle">🌍 DX GANG 🌍</text>
             <text class="dx-inset-sub" x="829" y="564" text-anchor="middle">INTERNATIONAL BRASS</text>
           </g>
+          <!-- contact tracing: one dot per case, one line per sponsor -> recruit. Built by the script. -->
+          <g id="obLinks"></g>
+          <g id="obDots"></g>
         </svg>
                 <div class="map-legend ob-legend">
                     <div class="map-legend-row"><span class="map-swatch tier-1"></span> 1 case</div>
                     <div class="map-legend-row"><span class="map-swatch tier-2"></span> 2 cases</div>
                     <div class="map-legend-row"><span class="map-swatch tier-3"></span> 3 cases</div>
                     <div class="map-legend-row"><span class="map-swatch tier-4"></span> 4+ cases</div>
-                    <div class="map-legend-row"><span class="map-swatch fresh"></span> new case</div>
+                    <div class="map-legend-row"><span class="ob-legend-dot"></span> case</div>
+                    <div class="map-legend-row"><span class="ob-legend-dot fresh"></span> new case</div>
+                    <div class="map-legend-row"><span class="ob-legend-dot p0"></span> patient zero</div>
+                    <div class="map-legend-row"><span class="ob-legend-line"></span> who infected who</div>
                 </div>
             </div>
             <div class="ob-side">
@@ -170,8 +176,8 @@
                     <div class="ob-panel-body" id="obLatestBody">No cases on file.</div>
                 </div>
                 <div class="ob-panel" id="obTurf">
-                    <div class="ob-panel-title">📍 TURF REPORT</div>
-                    <div class="ob-panel-body" id="obTurfBody"><span class="ob-muted">Tap an infected state to see the case files there.</span></div>
+                    <div class="ob-panel-title" id="obTurfTitle">📍 TURF REPORT</div>
+                    <div class="ob-panel-body" id="obTurfBody"><span class="ob-muted">Tap a dot for a case file, or a state for everyone there.</span></div>
                 </div>
             </div>
         </div>
@@ -430,6 +436,104 @@
 
         function tierClass(n) { return n >= 4 ? 'tier-4' : n === 3 ? 'tier-3' : n === 2 ? 'tier-2' : 'tier-1'; }
 
+        // ---- Lat/lon -> map pixels ----------------------------------------------------
+        // The territory map SVG isn't a stock projection, so this conic was fitted
+        // to 37 state-corner vertices with known coordinates (0.7 px RMS over the
+        // lower 48). Alaska and Hawaii are drawn as insets; those get a rough
+        // linear fit inside each inset's box, which is plenty at inset scale.
+        const D = Math.PI / 180;
+        const PROJ = { lon0: -96.030785, n: 0.602262, a: 2092.38547, b: -1131.785243, c: 43.425606, x0: 416.655048, y0: -1077.160074, sy: -0.988018 };
+        function projectLower48(lat, lon) {
+            const phi = lat * D, rho = PROJ.a + PROJ.b * phi + PROJ.c * phi * phi, th = PROJ.n * (lon - PROJ.lon0) * D;
+            return [PROJ.x0 + rho * Math.sin(th), PROJ.y0 - PROJ.sy * rho * Math.cos(th)];
+        }
+        function insetFit(el, latRange, lonRange) {
+            const b = el.getBBox();
+            return (lat, lon) => [
+                b.x + (lon - lonRange[0]) / (lonRange[1] - lonRange[0]) * b.width,
+                b.y + (latRange[1] - lat) / (latRange[1] - latRange[0]) * b.height,
+            ];
+        }
+        const projectAK = stateEls.AK ? insetFit(stateEls.AK, [54.5, 71.4], [-168, -130]) : null;
+        const projectHI = stateEls.HI ? insetFit(stateEls.HI, [18.9, 22.25], [-160.25, -154.8]) : null;
+        function project(lat, lon) {
+            if (lat > 50 && lon < -128 && projectAK) return projectAK(lat, lon);
+            if (lat < 23.5 && lon < -150 && projectHI) return projectHI(lat, lon);
+            return projectLower48(lat, lon);
+        }
+        const centroids = {};
+        Object.keys(stateEls).forEach(abbr => {
+            const b = stateEls[abbr].getBBox();
+            centroids[abbr] = [b.x + b.width / 2, b.y + b.height / 2];
+        });
+
+        // ---- Place every case ---------------------------------------------------------
+        // Real coordinates when QRZ had them (grid-square centres, so coarse),
+        // else the middle of the member's state, else a slot in the DX box.
+        const dxBox = (function () {
+            const r = dxEl && dxEl.querySelector('rect');
+            return r ? { x: +r.getAttribute('x'), y: +r.getAttribute('y'), w: +r.getAttribute('width'), h: +r.getAttribute('height') } : null;
+        })();
+        const taken = {};
+        let dxSlots = 0, placedByState = 0, unplaced = 0;
+        function nudge(pt) {
+            // spread coincident dots (same grid square) into a little spiral
+            const key = Math.round(pt[0] / 2) + ':' + Math.round(pt[1] / 2);
+            const k = taken[key] = (taken[key] || 0) + 1;
+            if (k === 1) return pt;
+            const r = 5 * Math.sqrt(k - 1), a = (k - 1) * 2.4;
+            return [pt[0] + r * Math.cos(a), pt[1] + r * Math.sin(a)];
+        }
+        cases.forEach(c => {
+            c.pos = null;
+            if (c.state && stateEls[c.state]) {
+                if (typeof c.lat === 'number' && typeof c.lon === 'number') c.pos = nudge(project(c.lat, c.lon));
+                else { c.pos = nudge(centroids[c.state]); c.approx = true; placedByState++; }
+            } else if (c.dx && dxBox) {
+                const i = dxSlots++, perRow = Math.floor((dxBox.w - 24) / 13);
+                const row = Math.min(1, Math.floor(i / perRow)), col = row === 1 ? (i - perRow) % perRow : i % perRow;
+                c.pos = nudge([dxBox.x + 12 + col * 13, row === 0 ? dxBox.y + 11 : dxBox.y + dxBox.h - 9]);
+                c.approx = true;
+            } else {
+                unplaced++;
+            }
+        });
+
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const linksEl = document.getElementById('obLinks');
+        const dotsEl = document.getElementById('obDots');
+        let selectedCase = null;
+        cases.forEach((c, i) => {
+            if (!c.pos) return;
+            const g = document.createElementNS(SVG_NS, 'g');
+            g.setAttribute('class', 'ob-dot' + (i === 0 ? ' p0' : ''));
+            g.setAttribute('transform', 'translate(' + c.pos[0].toFixed(1) + ' ' + c.pos[1].toFixed(1) + ')');
+            const ring = document.createElementNS(SVG_NS, 'circle');
+            ring.setAttribute('class', 'ob-ring'); ring.setAttribute('r', i === 0 ? 8 : 5.5);
+            const core = document.createElementNS(SVG_NS, 'circle');
+            core.setAttribute('class', 'ob-core'); core.setAttribute('r', i === 0 ? 7 : 5.5);
+            const title = document.createElementNS(SVG_NS, 'title');
+            title.textContent = c.call + ' · BKG #' + c.num + ' · ' + placeOf(c) + ' · ' + fmtDate(c.day);
+            g.appendChild(ring); g.appendChild(core); g.appendChild(title);
+            g.addEventListener('click', e => { e.stopPropagation(); selectedCase = selectedCase === c ? null : c; selectedTurf = null; render(cur); });
+            dotsEl.appendChild(g);
+            c.dotEl = g;
+            const s = c.sponsor && byCall[c.sponsor];
+            if (s && s.pos) {
+                const [x1, y1] = s.pos, [x2, y2] = c.pos;
+                const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+                const bend = Math.min(40, len * 0.22) * (i % 2 ? 1 : -1);
+                const cx = (x1 + x2) / 2 - dy / len * bend, cy = (y1 + y2) / 2 + dx / len * bend;
+                const path = document.createElementNS(SVG_NS, 'path');
+                path.setAttribute('class', 'ob-link');
+                path.setAttribute('d', 'M' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' Q' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ' ' + x2.toFixed(1) + ' ' + y2.toFixed(1));
+                path.setAttribute('pathLength', '1');
+                linksEl.appendChild(path);
+                c.linkEl = path;
+            }
+        });
+        function setClass(el, cls, on) { if (el && el.classList.contains(cls) !== on) el.classList.toggle(cls, on); }
+
         // ---- Chart -------------------------------------------------------------------
         const chart = document.getElementById('obChart');
         const CW = 800, CH = 260, PL = 44, PR = 14, PT = 16, PB = 34;
@@ -510,19 +614,31 @@
             // map
             Object.keys(stateCount).forEach(k => delete stateCount[k]);
             Object.keys(dxCount).forEach(k => delete dxCount[k]);
-            let dxTotal = 0, freshStates = {}, dxFresh = false;
+            let dxTotal = 0;
             inf.forEach(c => {
-                if (c.state) { stateCount[c.state] = (stateCount[c.state] || 0) + 1; if (cur - c.t <= FRESH_DAYS) freshStates[c.state] = true; }
-                if (c.dx) { dxCount[c.dx] = (dxCount[c.dx] || 0) + 1; dxTotal++; if (cur - c.t <= FRESH_DAYS) dxFresh = true; }
+                if (c.state) stateCount[c.state] = (stateCount[c.state] || 0) + 1;
+                if (c.dx) { dxCount[c.dx] = (dxCount[c.dx] || 0) + 1; dxTotal++; }
             });
             Object.keys(stateEls).forEach(abbr => {
                 const el = stateEls[abbr];
                 const k = abbr === 'DX' ? dxTotal : (stateCount[abbr] || 0);
-                el.classList.remove('has-members', 'tier-1', 'tier-2', 'tier-3', 'tier-4', 'ob-fresh');
+                el.classList.remove('has-members', 'tier-1', 'tier-2', 'tier-3', 'tier-4');
                 if (k) el.classList.add('has-members', tierClass(k));
-                if (abbr === 'DX' ? dxFresh : freshStates[abbr]) el.classList.add('ob-fresh');
                 el.classList.toggle('is-active', selectedTurf === abbr);
             });
+            // dots + transmission lines: show what's happened by day `cur`
+            cases.forEach(c => {
+                const on = c.t <= cur, fresh = on && cur - c.t <= FRESH_DAYS;
+                const related = selectedCase && (c.sponsor === selectedCase.call || (c.sponsor && byCall[c.sponsor] === selectedCase) || selectedCase.sponsor === c.call);
+                setClass(c.dotEl, 'shown', on);
+                setClass(c.dotEl, 'fresh', fresh);
+                setClass(c.dotEl, 'sel', c === selectedCase);
+                setClass(c.dotEl, 'hl', !!related && c !== selectedCase);
+                setClass(c.linkEl, 'shown', on);
+                setClass(c.linkEl, 'fresh', fresh);
+                setClass(c.linkEl, 'hl', !!(selectedCase && (c === selectedCase || c.sponsor === selectedCase.call)));
+            });
+            setClass(mapEl, 'ob-has-sel', !!selectedCase);
 
             // stats
             const territories = Object.keys(stateCount).length + Object.keys(dxCount).length;
@@ -617,10 +733,29 @@
 
         function renderTurf() {
             const body = document.getElementById('obTurfBody');
+            document.getElementById('obTurfTitle').textContent = selectedCase ? '🗂 CASE FILE' : '📍 TURF REPORT';
+            if (selectedCase) {
+                const c = selectedCase;
+                const on = c.t <= cur;
+                const kids = c.recruits.filter(r => r.t <= cur);
+                const s = c.sponsor && byCall[c.sponsor];
+                body.innerHTML =
+                    '<div class="ob-case-call">' + qrz(c.call) + ' <span class="ob-case-num">BKG #' + c.num + '</span></div>' +
+                    '<div class="ob-case-name">' + esc(c.name || '') + '</div>' +
+                    '<div class="ob-case-row">📍 ' + esc(placeOf(c)) + (c.approx ? ' <span class="ob-muted">(approx.)</span>' : '') + '</div>' +
+                    '<div class="ob-case-row">📅 ' + (on ? esc(fmtDate(c.day)) + (c.interpolated ? ' <span class="ob-muted">(est.)</span>' : '') : '<span class="ob-muted">not infected yet (day ' + c.t + ')</span>') + '</div>' +
+                    '<div class="ob-case-row">🦠 Infected by: ' + (s ? qrz(s.call) + ' <span class="ob-muted">' + esc(placeOf(s)) + '</span>' : (c === cases[0] ? '<b>nobody. Patient zero.</b>' : '<span class="ob-muted">unknown / spontaneous</span>')) + '</div>' +
+                    '<div class="ob-case-row">☣ Infected ' + (on && kids.length ? plural(kids.length, 'ham') + ':' : 'nobody yet') + '</div>' +
+                    (kids.length ? '<ul class="ob-turf-list">' + kids.map(r => '<li>' + qrz(r.call) + ' <span class="ob-muted">' + esc(placeOf(r)) + ' · ' + esc(fmtDate(r.day)) + '</span></li>').join('') + '</ul>' : '') +
+                    '<div class="ob-note">Bright lines on the map are this case\'s chain. Tap the dot again to clear.</div>';
+                return;
+            }
             if (!selectedTurf) {
-                body.innerHTML = '<span class="ob-muted">Tap an infected state to see the case files there.</span>' +
+                body.innerHTML = '<span class="ob-muted">Tap a dot for a case file, or a state for everyone there.</span>' +
                     (datesSynthetic ? '<div class="ob-note">⚠ The roster has no join dates yet, so cases are spaced a week apart for the replay.</div>' :
-                     datesInterpolated ? '<div class="ob-note">⚠ ' + plural(datesInterpolated, 'case') + ' had no join date on the roster; dates marked (est.) are interpolated.</div>' : '');
+                     datesInterpolated ? '<div class="ob-note">⚠ ' + plural(datesInterpolated, 'case') + ' had no join date on the roster; dates marked (est.) are interpolated.</div>' : '') +
+                    (placedByState ? '<div class="ob-note">📡 ' + plural(placedByState, 'case') + ' had no grid square on QRZ and sit at the middle of their state.</div>' : '') +
+                    (unplaced ? '<div class="ob-note">👻 ' + plural(unplaced, 'case') + ' with no location on QRZ at all. Counted, but not on the map.</div>' : '');
                 return;
             }
             const inf = infectedAt(cur);
@@ -639,6 +774,7 @@
         Object.keys(stateEls).forEach(abbr => {
             stateEls[abbr].addEventListener('click', () => {
                 selectedTurf = selectedTurf === abbr ? null : abbr;
+                selectedCase = null;
                 render(cur);
             });
         });
@@ -655,13 +791,16 @@
             if (cur >= T) { stop(); return; }
             render(Math.min(T, cur + Math.max(perTick, 0.5)));
         }
+        let autoplay = null;   // pending kick-off; any user action cancels it
         function play() {
+            clearTimeout(autoplay); autoplay = null;
             if (cur >= T) render(0);
             if (timer) return;
             timer = setInterval(tick, 40);
             playBtn.textContent = '❚❚ PAUSE';
         }
         function stop() {
+            clearTimeout(autoplay); autoplay = null;
             if (timer) clearInterval(timer);
             timer = null;
             playBtn.textContent = cur >= T ? '⟲ REPLAY' : '▶ PLAY';
@@ -679,7 +818,7 @@
 
         const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (reduceMotion) { render(T); stop(); }
-        else { render(0); setTimeout(play, 900); }
+        else { render(0); autoplay = setTimeout(play, 900); }
     })();
     </script>
 </body>
