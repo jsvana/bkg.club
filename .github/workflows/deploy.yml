@@ -12,6 +12,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  contents: write
   pages: write
   id-token: write
 
@@ -24,11 +25,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Mugshots are gitignored; keep them between builds so only new or
+      # changed photos are downloaded. The key follows the QRZ cache, so a
+      # fresh copy is saved whenever the lookups change.
+      - name: Restore mugshots
+        uses: actions/cache@v4
+        with:
+          path: images/mugshots
+          key: mugshots-${{ hashFiles('qrz-cache.json') }}
+          restore-keys: |
+            mugshots-
+
       - name: Build roster
         env:
           QRZ_USERNAME: ${{ secrets.QRZ_USERNAME }}
           QRZ_PASSWORD: ${{ secrets.QRZ_PASSWORD }}
         run: python3 scripts/build-roster.py
+
+      # Persist refreshed QRZ lookups so the next build only fetches what's new
+      # or stale. Pushes made with GITHUB_TOKEN don't trigger workflows, and
+      # [skip ci] makes that explicit, so this can't loop.
+      - name: Commit refreshed QRZ cache
+        run: |
+          if git diff --quiet -- qrz-cache.json; then
+            echo "QRZ cache unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add qrz-cache.json
+          git commit -m "Refresh QRZ cache [skip ci]"
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

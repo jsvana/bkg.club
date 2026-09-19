@@ -1,0 +1,3 @@
+{
+  "_about": "Cached QRZ lookups for the roster, keyed by the callsign on the sheet. Auto-refreshed by scripts/build-roster.py; safe to delete (it just rebuilds)."
+}
