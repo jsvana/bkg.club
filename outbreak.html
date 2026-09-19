@@ -363,11 +363,11 @@
             50: 'Quansheng stock is up. Quansheng supply is down.',
             100: 'Herd immunity is not coming.',
             250: 'The ARRL has issued a statement. Nobody read it.',
-            500: 'Every repeater in the country is now compromised.',
+            500: 'Every simplex frequency in the country is now compromised.',
             1000: 'It was never a club. It was a pandemic.',
         };
         const STATE_QUIPS = [
-            'Local repeaters report unusual brass activity.',
+            'Local nets report unusual brass activity.',
             'Residents advised to stay indoors and mod a radio.',
             'HOA antenna restrictions proving ineffective.',
             'Transmission suspected via simplex.',
@@ -699,7 +699,7 @@
             const busiest = months.slice().sort((a, b) => b.n - a.n)[0];
             const rows = [
                 ['Pathogen', 'Brassus knucklus (BKG)'],
-                ['Transmission', 'Simplex, repeaters, hamfest handshakes'],
+                ['Transmission', 'Simplex, hamfest handshakes, POTA activations'],
                 ['Patient zero', qrz(cases[0].call) + ' in ' + esc(placeOf(cases[0]))],
                 ['Incubation', avgInc == null ? '<span class="ob-muted">unknown</span>' : plural(avgInc, 'day') + ' avg, sponsor to recruit'],
                 ['Case interval', lastGap == null ? '—' : plural(lastGap, 'day') + ' between the last two cases'],
