@@ -8,14 +8,19 @@ Ham2K PoLo callsign notes file (auto-generated, not manually edited).
 
 tree.html, nearby.html and outbreak.html each get a JSON payload injected
 between their own START/END markers (downline, geo, and outbreak data).
+
+QRZ lookups are cached in qrz-cache.json (see QRZ_CACHE_* below); the deploy
+workflow commits the refreshed cache back to main after each build.
 """
 
 import csv
+import http.client
 import io
 import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -38,6 +43,20 @@ MUGSHOT_DIR = REPO_ROOT / "images" / "mugshots"
 MUGSHOT_REL_DIR = "images/mugshots"
 MUGSHOT_OVERRIDE_DIR = REPO_ROOT / "images" / "mugshots-override"
 MUGSHOT_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
+# QRZ lookup cache (qrz-cache.json, committed back by the deploy workflow).
+# A full roster is one QRZ request per member; almost all of them repeat the
+# previous build's answer. Entries older than QRZ_CACHE_MAX_AGE_DAYS are
+# refreshed, at most QRZ_REFRESH_PER_BUILD per build (oldest first) so the
+# roster cycles through QRZ gradually instead of all at once. New members
+# are always looked up.
+QRZ_CACHE_PATH = REPO_ROOT / "qrz-cache.json"
+QRZ_CACHE_ABOUT = (
+    "Cached QRZ lookups for the roster, keyed by the callsign on the sheet. "
+    "Auto-refreshed by scripts/build-roster.py; safe to delete (it just rebuilds)."
+)
+QRZ_CACHE_MAX_AGE_DAYS = 7
+QRZ_REFRESH_PER_BUILD = 60
 
 NEW_BADGE_LIMIT = 3  # last N members get the "NEW!!" badge
 OG_BADGE_NUMBERS = {2}  # member numbers that get the "OG" badge (founder #1 has its own treatment)
@@ -346,15 +365,37 @@ def apply_location_overrides(
         )
 
 
+# A full build is one QRZ request per member (500+), and QRZ drops or times
+# out a handful of connections per day. Retry each request a few times with
+# a short backoff before giving up on it, so one hiccup neither kills the
+# deploy nor silently loses a member's location for that build.
+FETCH_ATTEMPTS = 3
+FETCH_BACKOFF_SECONDS = (2, 5)
+
+
+def _fetch_with_retry(req: urllib.request.Request, *, timeout: float, what: str) -> bytes | None:
+    """GET a URL, retrying transient network failures. Returns None if all attempts fail."""
+    for attempt in range(1, FETCH_ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.read()
+        except (OSError, http.client.HTTPException) as exc:
+            # OSError covers urllib.error.URLError, socket timeouts and
+            # connection resets; HTTPException covers RemoteDisconnected /
+            # BadStatusLine when the server hangs up mid-response.
+            if attempt < FETCH_ATTEMPTS:
+                delay = FETCH_BACKOFF_SECONDS[min(attempt - 1, len(FETCH_BACKOFF_SECONDS) - 1)]
+                print(f"  {what} failed (attempt {attempt}/{FETCH_ATTEMPTS}): {exc}; retrying in {delay}s", file=sys.stderr)
+                time.sleep(delay)
+            else:
+                print(f"  {what} failed after {FETCH_ATTEMPTS} attempts: {exc}", file=sys.stderr)
+    return None
+
+
 def _qrz_get_raw(params: dict[str, str]) -> bytes | None:
     url = QRZ_XML_URL + "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"User-Agent": "BKG-Roster-Builder/1.0"})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return resp.read()
-    except (urllib.error.URLError, TimeoutError) as exc:
-        print(f"  QRZ request failed: {exc}", file=sys.stderr)
-        return None
+    return _fetch_with_retry(req, timeout=15, what="QRZ request")
 
 
 def _qrz_get(params: dict[str, str]) -> ET.Element | None:
@@ -384,8 +425,10 @@ def qrz_login(username: str, password: str) -> str | None:
     return key.text if key is not None and key.text else None
 
 
-def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) -> dict:
-    """Look up a callsign. Returns {'current_call', 'state', 'country', 'image'}.
+def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) -> dict | None:
+    """Look up a callsign. Returns {'current_call', 'state', 'country', 'image',
+    'grid', 'lat', 'lon', 'found'}, or None if the lookup itself failed (network,
+    parse, or session error) so the caller can fall back to a cached answer.
 
     'current_call' is QRZ's canonical <call> element, which differs from the
     queried callsign for retired/aliased/vanity calls; callers use it to remap
@@ -395,11 +438,11 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
     """
     empty = {
         "current_call": None, "state": None, "country": None, "image": None,
-        "grid": None, "lat": None, "lon": None,
+        "grid": None, "lat": None, "lon": None, "found": False,
     }
     raw = _qrz_get_raw({"s": session_key, "callsign": callsign})
     if raw is None:
-        return empty
+        return None
     if debug:
         print(f"  QRZ response for {callsign}:", file=sys.stderr)
         for line in raw.decode("utf-8", errors="replace").splitlines():
@@ -408,16 +451,22 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
         root = ET.fromstring(raw)
     except ET.ParseError as exc:
         print(f"  QRZ parse error for {callsign}: {exc}", file=sys.stderr)
-        return empty
+        return None
     # Surface session-level errors (e.g. "Session Timeout", "Not subscribed").
     session = root.find("q:Session", QRZ_NS)
+    session_error = None
     if session is not None:
         err = session.find("q:Error", QRZ_NS)
         if err is not None and err.text:
-            print(f"  QRZ session error for {callsign}: {err.text}", file=sys.stderr)
+            session_error = err.text.strip()
+            print(f"  QRZ session error for {callsign}: {session_error}", file=sys.stderr)
     call = root.find("q:Callsign", QRZ_NS)
     if call is None:
-        return empty
+        # "Not found" is a real answer worth caching; anything else (session
+        # timeout, subscription lapse, empty reply) is a failed lookup.
+        if session_error and session_error.lower().startswith("not found"):
+            return empty
+        return None
 
     # QRZ returns the operator's canonical <call>, which may differ from the
     # queried callsign for retired/aliased/vanity calls. Use it as the
@@ -470,7 +519,7 @@ def qrz_fetch_callsign(session_key: str, callsign: str, *, debug: bool = False) 
 
     return {
         "current_call": current_call, "state": state, "country": country,
-        "image": image, "grid": grid, "lat": lat, "lon": lon,
+        "image": image, "grid": grid, "lat": lat, "lon": lon, "found": True,
     }
 
 
@@ -489,8 +538,13 @@ def local_override_mugshot(callsign: str) -> str | None:
     return None
 
 
-def download_mugshot(callsign: str, url: str) -> str | None:
-    """Download a QRZ profile image. Returns the repo-relative path, or None on failure."""
+def download_mugshot(callsign: str, url: str, *, reuse_existing: bool = False) -> str | None:
+    """Download a QRZ profile image. Returns the repo-relative path, or None on failure.
+
+    With reuse_existing (the image URL hasn't changed since the cached lookup),
+    a file already in images/mugshots/ — restored by the workflow's cache step —
+    is used as-is instead of being downloaded again.
+    """
     parsed = urllib.parse.urlparse(url)
     suffix = Path(parsed.path).suffix.lower()
     if suffix not in MUGSHOT_EXTS:
@@ -498,13 +552,10 @@ def download_mugshot(callsign: str, url: str) -> str | None:
     MUGSHOT_DIR.mkdir(parents=True, exist_ok=True)
     filename = f"{callsign}{suffix}"
     dest = MUGSHOT_DIR / filename
+    if reuse_existing and dest.is_file() and dest.stat().st_size > 0:
+        return f"{MUGSHOT_REL_DIR}/{filename}"
     req = urllib.request.Request(url, headers={"User-Agent": "BKG-Roster-Builder/1.0"})
-    try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = resp.read()
-    except (urllib.error.URLError, TimeoutError) as exc:
-        print(f"  QRZ image download failed for {callsign}: {exc}", file=sys.stderr)
-        return None
+    data = _fetch_with_retry(req, timeout=20, what=f"QRZ image download for {callsign}")
     if not data:
         return None
     dest.write_bytes(data)
@@ -527,12 +578,58 @@ def mark_territory_ogs(members: list[dict]) -> None:
         member["state_og" if kind == "state" else "country_og"] = True
 
 
+QRZ_CACHE_FIELDS = ("current_call", "state", "country", "image", "grid", "lat", "lon", "found")
+
+
+def load_qrz_cache() -> dict[str, dict]:
+    """Read qrz-cache.json -> {CALLSIGN: {fetched, current_call, state, ...}}."""
+    if not QRZ_CACHE_PATH.is_file():
+        return {}
+    try:
+        data = json.loads(QRZ_CACHE_PATH.read_text())
+    except (OSError, ValueError) as exc:
+        print(f"  Ignoring unreadable {QRZ_CACHE_PATH.name}: {exc}", file=sys.stderr)
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {
+        key.upper(): entry
+        for key, entry in data.items()
+        if not key.startswith("_") and isinstance(entry, dict) and entry.get("fetched")
+    }
+
+
+def save_qrz_cache(cache: dict[str, dict]) -> None:
+    """Write the cache one entry per line, sorted, so commits diff cleanly."""
+    lines = ["{", f'  "_about": {json.dumps(QRZ_CACHE_ABOUT)},']
+    for key in sorted(cache):
+        entry = {"fetched": cache[key]["fetched"]}
+        entry.update({f: cache[key].get(f) for f in QRZ_CACHE_FIELDS})
+        lines.append(f"  {json.dumps(key)}: {json.dumps(entry, ensure_ascii=False)},")
+    lines[-1] = lines[-1].rstrip(",")
+    lines.append("}")
+    QRZ_CACHE_PATH.write_text("\n".join(lines) + "\n")
+
+
+def _cache_age_days(entry: dict, now: datetime) -> float:
+    try:
+        fetched = datetime.strptime(entry["fetched"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except (KeyError, ValueError, TypeError):
+        return float("inf")
+    return (now - fetched).total_seconds() / 86400
+
+
 def annotate_qrz(members: list[dict]) -> None:
     """Set member['state'], member['country'], member['state_og'],
-    member['country_og'], and member['mugshot_path'] in place.
+    member['country_og'], member['grid'/'lat'/'lon'] and member['mugshot_path']
+    in place, from QRZ via the qrz-cache.json cache.
 
-    Requires env vars QRZ_USERNAME and QRZ_PASSWORD (an XML-subscription QRZ
-    account). Raises RuntimeError if creds are missing or login fails.
+    Only new members and the oldest stale cache entries (see
+    QRZ_REFRESH_PER_BUILD) hit QRZ; everyone else comes from the cache. A
+    lookup that fails keeps the cached answer. Requires env vars QRZ_USERNAME
+    and QRZ_PASSWORD (an XML-subscription QRZ account) when anything needs
+    fetching; raises RuntimeError if they're missing or login fails and there
+    is no cache to fall back on.
     """
     for member in members:
         member["state"] = None
@@ -544,17 +641,73 @@ def annotate_qrz(members: list[dict]) -> None:
         member["lat"] = None
         member["lon"] = None
 
-    username = os.environ.get("QRZ_USERNAME")
-    password = os.environ.get("QRZ_PASSWORD")
-    if not username or not password:
-        raise RuntimeError("QRZ_USERNAME and QRZ_PASSWORD must be set")
+    cache = load_qrz_cache()
+    now = datetime.now(timezone.utc)
+    stamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    session_key = qrz_login(username, password)
-    if not session_key:
-        raise RuntimeError("QRZ login failed")
+    # Decide who gets a live lookup this build.
+    to_fetch: set[str] = set()
+    stale: list[tuple[float, str]] = []
+    for member in members:
+        key = member["callsign"].upper()
+        entry = cache.get(key)
+        if entry is None:
+            to_fetch.add(key)
+        else:
+            age = _cache_age_days(entry, now)
+            if age > QRZ_CACHE_MAX_AGE_DAYS:
+                stale.append((age, key))
+    stale.sort(reverse=True)
+    skipped_stale = max(0, len(stale) - QRZ_REFRESH_PER_BUILD)
+    to_fetch.update(key for _age, key in stale[:QRZ_REFRESH_PER_BUILD])
+    print(
+        f"  QRZ cache: {len(cache)} entries; fetching {len(to_fetch)} "
+        f"({len(to_fetch) - min(len(stale), QRZ_REFRESH_PER_BUILD)} new, "
+        f"{min(len(stale), QRZ_REFRESH_PER_BUILD)} stale refresh, {skipped_stale} stale deferred)",
+        file=sys.stderr,
+    )
 
-    for idx, member in enumerate(members):
-        info = qrz_fetch_callsign(session_key, member["callsign"], debug=(idx == 0))
+    session_key = None
+    if to_fetch:
+        username = os.environ.get("QRZ_USERNAME")
+        password = os.environ.get("QRZ_PASSWORD")
+        if not username or not password:
+            if not cache:
+                raise RuntimeError("QRZ_USERNAME and QRZ_PASSWORD must be set")
+            print("  QRZ_USERNAME/QRZ_PASSWORD not set; building from the cache only", file=sys.stderr)
+        else:
+            session_key = qrz_login(username, password)
+            if not session_key:
+                if not cache:
+                    raise RuntimeError("QRZ login failed")
+                print("  QRZ login failed; building from the cache only", file=sys.stderr)
+
+    fetched = failed = 0
+    debug_done = False
+    for member in members:
+        key = member["callsign"].upper()
+        cached = cache.get(key)
+        info = None
+        if key in to_fetch and session_key:
+            info = qrz_fetch_callsign(session_key, key, debug=not debug_done)
+            debug_done = True
+            if info is None:
+                failed += 1
+                if cached:
+                    print(f"  QRZ lookup failed for {key}; keeping cached answer", file=sys.stderr)
+            else:
+                fetched += 1
+                entry = {"fetched": stamp, **{f: info.get(f) for f in QRZ_CACHE_FIELDS}}
+                # The cache is committed to a public repo: keep coordinates as
+                # coarse as what the site publishes (~1 km), never QRZ's exact ones.
+                for coord in ("lat", "lon"):
+                    if entry.get(coord) is not None:
+                        entry[coord] = round(entry[coord], 2)
+                cache[key] = entry
+        if info is None:
+            info = {f: cached.get(f) for f in QRZ_CACHE_FIELDS} if cached else {f: None for f in QRZ_CACHE_FIELDS}
+        image_unchanged = bool(cached and cached.get("image") and cached.get("image") == info.get("image"))
+
         # Remap to the operator's current callsign if QRZ reports a different
         # canonical <call> (e.g. after a vanity/retired-call change).
         current_call = info.get("current_call")
@@ -564,16 +717,23 @@ def annotate_qrz(members: list[dict]) -> None:
                 file=sys.stderr,
             )
             member["callsign"] = current_call
-        member["state"] = info["state"]
-        member["country"] = info["country"]
-        member["grid"] = info["grid"]
-        member["lat"] = info["lat"]
-        member["lon"] = info["lon"]
+        member["state"] = info.get("state")
+        member["country"] = info.get("country")
+        member["grid"] = info.get("grid")
+        member["lat"] = info.get("lat")
+        member["lon"] = info.get("lon")
         override = local_override_mugshot(member["callsign"])
         if override:
             member["mugshot_path"] = override
-        elif info["image"]:
-            member["mugshot_path"] = download_mugshot(member["callsign"], info["image"])
+        elif info.get("image"):
+            member["mugshot_path"] = download_mugshot(
+                member["callsign"], info["image"], reuse_existing=image_unchanged
+            )
+
+    if to_fetch:
+        print(f"  QRZ lookups: {fetched} fetched, {failed} failed", file=sys.stderr)
+    save_qrz_cache(cache)
+
     resolved = sum(1 for m in members if member_map_bucket(m))
     dx = sum(1 for m in members if (member_map_bucket(m) or ("",))[0] == "dx")
     mugshots = sum(1 for m in members if m.get("mugshot_path"))
