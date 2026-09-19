@@ -981,13 +981,25 @@ body {
     align-items: center;
     gap: 6px;
 }
-.ob-speed select {
-    font-family: 'Comic Sans MS', cursive;
-    font-size: 0.9rem;
-    background: #000;
-    color: var(--lime);
-    border: 3px inset #444;
-    padding: 4px 6px;
+.ob-speed { gap: 4px; }
+.ob-speed-label { margin-right: 4px; }
+.ob-speed-btn {
+    font-family: 'Bangers', cursive;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    color: var(--brass);
+    background: #111;
+    border: 2px outset var(--brass-dark);
+    padding: 3px 9px;
+    min-width: 38px;
+    line-height: 1.2;
+}
+.ob-speed-btn:hover { color: var(--brass-light); }
+.ob-speed-btn.is-on {
+    color: #000;
+    background: var(--lime);
+    border-style: inset;
+    border-color: #000;
 }
 .ob-day {
     display: flex;
@@ -1225,7 +1237,7 @@ body {
     fill: var(--brass-light);
     stroke: #000;
     stroke-width: 1.8;
-    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+    paint-order: stroke;
     transform-box: fill-box;
     transform-origin: center;
     animation: obPop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
