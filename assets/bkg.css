@@ -1015,6 +1015,67 @@ body {
     letter-spacing: 1px;
 }
 .ob-day-date { font-family: 'Special Elite', monospace; font-size: 0.85rem; color: var(--lime); }
+.ob-day-case { font-family: 'Special Elite', monospace; font-size: 0.72rem; color: #888; text-transform: uppercase; }
+
+/* Trace a callsign */
+.ob-trace { display: flex; gap: 6px; margin-bottom: 10px; }
+.ob-trace input {
+    flex: 1;
+    min-width: 0;
+    font-family: 'Comic Sans MS', cursive;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    padding: 5px 8px;
+    background: #000;
+    color: var(--lime);
+    border: 3px inset #444;
+}
+.ob-trace input:focus { outline: none; border-color: var(--brass-light); box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+.ob-trace input.is-bad { animation: obShake 0.35s; border-color: var(--hot-pink); }
+@keyframes obShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.ob-pick {
+    font-family: 'Bangers', cursive;
+    font-size: 1.05em;
+    color: var(--brass-light);
+    text-decoration: none;
+    letter-spacing: 1px;
+    border-bottom: 1px dashed var(--brass-dark);
+}
+.ob-pick:hover { color: var(--lime); border-bottom-color: var(--lime); }
+.ob-chain { line-height: 1.9; }
+.ob-chain b { color: var(--hot-pink); font-family: 'Bangers', cursive; font-size: 1.05em; letter-spacing: 1px; }
+.ob-chain-arrow { color: #777; }
+.ob-tree { list-style: none; margin: 4px 0 0 0; }
+.ob-tree .ob-tree { margin-left: 14px; border-left: 2px dotted var(--brass-dark); padding-left: 10px; }
+.ob-tree li { padding: 2px 0; font-size: 0.82rem; }
+
+/* Virulence board */
+.ob-vir-row {
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 4px;
+    border-bottom: 1px dashed rgba(212, 175, 55, 0.3);
+    text-decoration: none;
+    color: inherit;
+}
+.ob-vir-row:last-child { border-bottom: none; }
+.ob-vir-row:hover { background: rgba(212, 175, 55, 0.08); }
+.ob-vir-rank { font-family: 'Bangers', cursive; font-size: 1.2rem; color: var(--brass); }
+.ob-vir-main { min-width: 0; }
+.ob-vir-call { font-family: 'Bangers', cursive; font-size: 1.15rem; color: var(--brass-light); letter-spacing: 1px; }
+.ob-vir-name { font-family: 'Comic Sans MS', cursive; font-size: 0.75rem; color: #888; }
+.ob-vir-bar { display: block; height: 6px; margin-top: 4px; background: #000; border: 1px solid var(--brass-dark); }
+.ob-vir-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--blood-red), var(--hot-pink)); }
+.ob-vir-count {
+    font-family: 'Bangers', cursive;
+    font-size: 1.4rem;
+    color: var(--lime);
+    text-align: right;
+    line-height: 1;
+}
+.ob-vir-count small { display: block; font-family: 'Special Elite', monospace; font-size: 0.6rem; color: #888; letter-spacing: 0; }
 .ob-scrub {
     width: 100%;
     margin: 0 0 18px;
@@ -1254,6 +1315,9 @@ body {
 .ob-map .ob-dot.fresh .ob-ring { animation: obRipple 1.4s ease-out infinite; }
 .ob-map .ob-dot.p0 .ob-core { fill: var(--lime); stroke-width: 2; }
 .ob-map .ob-dot.p0 .ob-ring { stroke: var(--lime); opacity: 0.6; }
+.ob-map .ob-dot.carrier .ob-ring { stroke: #ff8c00; stroke-width: 2.5; opacity: 0.9; transform: scale(1.6); }
+.ob-map .ob-dot.carrier .ob-core { stroke: #ff8c00; }
+.ob-map .ob-dot.carrier.fresh .ob-ring { animation: none; }
 .ob-map .ob-dot.sel .ob-core { fill: #fff; stroke: var(--hot-pink); stroke-width: 2.5; }
 .ob-map .ob-dot.hl .ob-core { stroke: #fff; stroke-width: 2; }
 .ob-map .ob-dot:hover .ob-core { stroke: #fff; stroke-width: 2; }
@@ -1284,6 +1348,7 @@ body {
 }
 .ob-legend-dot.fresh { background: var(--hot-pink); box-shadow: 0 0 6px var(--hot-pink); }
 .ob-legend-dot.p0 { background: var(--lime); width: 14px; height: 14px; }
+.ob-legend-dot.carrier { box-shadow: 0 0 0 2px #ff8c00; }
 .ob-legend-line { width: 22px; height: 0; border-top: 2px solid #fff; opacity: 0.7; display: inline-block; flex-shrink: 0; }
 @media (prefers-reduced-motion: reduce) {
     .ob-map .ob-core, .ob-map .ob-ring { animation: none; }
