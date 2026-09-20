@@ -70,6 +70,8 @@
         <div class="ob-controls" id="obControls">
             <button type="button" class="tree-ctrl ob-btn" id="obPlay" aria-label="Play or pause the outbreak replay">▶ PLAY</button>
             <button type="button" class="tree-ctrl ob-btn" id="obRestart" aria-label="Restart from patient zero">⟲ DAY 0</button>
+            <button type="button" class="tree-ctrl ob-btn" id="obPrevCase" aria-label="Back to the previous case">◀ CASE</button>
+            <button type="button" class="tree-ctrl ob-btn" id="obNextCase" aria-label="Forward to the next case">CASE ▶</button>
             <button type="button" class="tree-ctrl ob-btn" id="obEnd" aria-label="Jump to today">⏭ TODAY</button>
             <div class="ob-speed" role="group" aria-label="Playback speed" id="obSpeed">
                 <span class="ob-speed-label">SPEED</span>
@@ -81,6 +83,7 @@
             <div class="ob-day">
                 <span class="ob-day-num" id="obDayNum">DAY 0</span>
                 <span class="ob-day-date" id="obDayDate">—</span>
+                <span class="ob-day-case" id="obCaseNum"></span>
             </div>
         </div>
         <input type="range" class="ob-scrub" id="obScrub" min="0" max="0" value="0" step="1" aria-label="Outbreak timeline">
@@ -166,6 +169,7 @@
                     <div class="map-legend-row"><span class="ob-legend-dot"></span> case</div>
                     <div class="map-legend-row"><span class="ob-legend-dot fresh"></span> new case</div>
                     <div class="map-legend-row"><span class="ob-legend-dot p0"></span> patient zero</div>
+                    <div class="map-legend-row"><span class="ob-legend-dot carrier"></span> top carrier</div>
                     <div class="map-legend-row"><span class="ob-legend-line"></span> who infected who</div>
                 </div>
             </div>
@@ -176,6 +180,10 @@
                 </div>
                 <div class="ob-panel" id="obTurf">
                     <div class="ob-panel-title" id="obTurfTitle">📍 TURF REPORT</div>
+                    <form class="ob-trace" id="obTrace" autocomplete="off">
+                        <input type="text" id="obTraceInput" placeholder="callsign" aria-label="Callsign to trace" spellcheck="false">
+                        <button type="submit" class="ob-speed-btn">TRACE</button>
+                    </form>
                     <div class="ob-panel-body" id="obTurfBody"><span class="ob-muted">Tap a dot for a case file, or a state for everyone there.</span></div>
                 </div>
             </div>
@@ -200,8 +208,8 @@
              ============================================================ -->
         <div class="ob-lower">
             <div class="ob-panel">
-                <div class="ob-panel-title">☣ SUPER-SPREADERS</div>
-                <div class="ob-panel-sub">Direct infections, per the <a href="tree.html">downline</a>. Contact tracing is easy when everybody brags.</div>
+                <div class="ob-panel-title">☣ MOST VIRULENT CARRIERS</div>
+                <div class="ob-panel-sub">Ranked by everyone downstream of them, direct and indirect, as of this day. Per the <a href="tree.html">downline</a>. Tap one to open their case file.</div>
                 <div class="ob-panel-body" id="obSpreaders"></div>
             </div>
             <div class="ob-panel">
@@ -353,6 +361,30 @@
             else c.sponsor = null;
         });
         const haveSponsors = cases.some(c => c.sponsor);
+
+        // Days on which something happened, for frame-by-frame stepping.
+        const caseDays = [...new Set(cases.map(c => c.t))].sort((a, b) => a - b);
+        function nextCaseDay(t) { const d = caseDays.find(x => x > t); return d == null ? T : d; }
+        function prevCaseDay(t) { let d = 0; for (const x of caseDays) { if (x < t) d = x; else break; } return d; }
+        // Everyone downstream of a case (direct + indirect) as of a day.
+        function descendantsOf(c, asOf) {
+            let n = 0;
+            const stack = [c];
+            while (stack.length) {
+                const x = stack.pop();
+                for (const r of x.recruits) if (r.t <= asOf) { n++; stack.push(r); }
+            }
+            return n;
+        }
+        function chainOf(c) {
+            const chain = [c]; const seen = new Set([c.call]);
+            let s = c.sponsor && byCall[c.sponsor];
+            while (s && !seen.has(s.call)) { chain.unshift(s); seen.add(s.call); s = s.sponsor && byCall[s.sponsor]; }
+            return chain;
+        }
+        function pick(call, extra) {
+            return '<a href="#" class="ob-pick' + (extra ? ' ' + extra : '') + '" data-call="' + esc(call) + '">' + esc(call) + '</a>';
+        }
 
         // ---- Pre-compute the headline log -------------------------------------
         const MILESTONES = {
@@ -605,6 +637,7 @@
         // case appears, the selection changes, or playback stops. Rebuilding
         // them every frame is what made the replay crawl on phones.
         let lastHeavyN = -1;
+        let carrierRank = {};
         function render(t, force) {
             cur = Math.max(0, Math.min(T, Math.round(t)));
             const inf = infectedAt(cur);
@@ -618,6 +651,7 @@
             document.getElementById('obScrub').value = cur;
             const daysTile = document.getElementById('obDaysTile');
             if (daysTile) daysTile.textContent = cur;
+            document.getElementById('obCaseNum').textContent = 'CASE ' + n + ' / ' + cases.length;
 
             // map
             Object.keys(stateCount).forEach(k => delete stateCount[k]);
@@ -691,14 +725,21 @@
                 (latest.sponsor && byCall[latest.sponsor] ? '<div class="ob-case-row">⏱ Incubation: ' + plural(Math.max(0, latest.t - byCall[latest.sponsor].t), 'day') + '</div>' : '')
             ) : 'No cases on file.';
 
-            // super-spreaders
-            const spreaders = inf.map(c => ({ c, k: c.recruits.filter(r => r.t <= cur).length })).filter(x => x.k > 0)
-                .sort((a, b) => b.k - a.k || a.c.num - b.c.num).slice(0, 5);
-            const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
-            document.getElementById('obSpreaders').innerHTML = spreaders.length ? spreaders.map((x, i) =>
-                '<div class="kingpin-row"><span class="kingpin-rank">' + medals[i] + '</span>' + qrz(x.c.call) +
-                '<span class="kingpin-name">' + esc(x.c.name || '') + '</span>' +
-                '<span class="kingpin-count">' + plural(x.k, 'infection') + '</span></div>').join('')
+            // most virulent carriers: ranked by total downstream, direct as tiebreak
+            const carriers = inf.map(c => ({ c, direct: c.recruits.filter(r => r.t <= cur).length, total: descendantsOf(c, cur) }))
+                .filter(x => x.total > 0)
+                .sort((a, b) => b.total - a.total || b.direct - a.direct || a.c.num - b.c.num);
+            const topCarriers = new Set(carriers.slice(0, 5).map(x => x.c));
+            cases.forEach(c => setClass(c.dotEl, 'carrier', topCarriers.has(c)));
+            carrierRank = {}; carriers.forEach((x, i) => { carrierRank[x.c.call] = { rank: i + 1, direct: x.direct, total: x.total }; });
+            const maxTotal = carriers.length ? carriers[0].total : 1;
+            const medals = ['🥇', '🥈', '🥉'];
+            document.getElementById('obSpreaders').innerHTML = carriers.length ? carriers.slice(0, 8).map((x, i) =>
+                '<a href="#" class="ob-vir-row ob-pick" data-call="' + esc(x.c.call) + '">' +
+                '<span class="ob-vir-rank">' + (medals[i] || (i + 1) + '.') + '</span>' +
+                '<span class="ob-vir-main"><span class="ob-vir-call">' + esc(x.c.call) + '</span> <span class="ob-vir-name">' + esc(x.c.name || '') + '</span>' +
+                '<span class="ob-vir-bar"><span style="width:' + Math.max(4, Math.round(100 * x.total / maxTotal)) + '%"></span></span></span>' +
+                '<span class="ob-vir-count">' + x.total + '<small>' + x.direct + ' direct</small></span></a>').join('')
                 : '<span class="ob-muted">' + (haveSponsors ? 'Nobody has infected anybody yet. Patient zero is working on it.' : 'No contact tracing data on the roster yet.') + '</span>';
 
             // profile
@@ -741,6 +782,43 @@
             renderTurf();
         }
 
+        // Nested "who infected who" list under a case, as of a day. Capped so a
+        // patient-zero case file doesn't render the whole roster at once.
+        function treeHtml(c, asOf, depth, budget) {
+            budget = budget || { n: 40 };
+            const kids = c.recruits.filter(r => r.t <= asOf).sort((a, b) => a.t - b.t);
+            if (!kids.length || depth > 6) return '';
+            let out = '<ul class="ob-tree">';
+            for (const r of kids) {
+                if (budget.n-- <= 0) { out += '<li class="ob-muted">… and more. Tap a name to dig in.</li>'; break; }
+                const sub = descendantsOf(r, asOf);
+                out += '<li>' + pick(r.call) + ' <span class="ob-muted">' + esc(fmtDate(r.day)) + (sub ? ' · ' + sub + ' downstream' : '') + '</span>' + treeHtml(r, asOf, depth + 1, budget) + '</li>';
+            }
+            return out + '</ul>';
+        }
+        function selectCall(call) {
+            const c = byCall[String(call || '').trim().toUpperCase()];
+            if (!c) return false;
+            selectedCase = c; selectedTurf = null;
+            if (c.t > cur) jump(c.t); else render(cur, true);
+            return true;
+        }
+        document.addEventListener('click', e => {
+            const a = e.target.closest('.ob-pick');
+            if (!a) return;
+            e.preventDefault();
+            selectCall(a.dataset.call);
+            document.getElementById('obTurf').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+        document.getElementById('obTrace').addEventListener('submit', e => {
+            e.preventDefault();
+            const input = document.getElementById('obTraceInput');
+            if (!selectCall(input.value)) {
+                input.classList.remove('is-bad'); void input.offsetWidth; input.classList.add('is-bad');
+                document.getElementById('obTurfBody').innerHTML = '<span class="ob-muted">No case on file for "' + esc(input.value.trim().toUpperCase()) + '". Not infected. Yet.</span>';
+            }
+        });
+
         function renderTurf() {
             const body = document.getElementById('obTurfBody');
             document.getElementById('obTurfTitle').textContent = selectedCase ? '🗂 CASE FILE' : '📍 TURF REPORT';
@@ -749,15 +827,19 @@
                 const on = c.t <= cur;
                 const kids = c.recruits.filter(r => r.t <= cur);
                 const s = c.sponsor && byCall[c.sponsor];
+                const chain = chainOf(c);
+                const rank = carrierRank[c.call];
                 body.innerHTML =
                     '<div class="ob-case-call">' + qrz(c.call) + ' <span class="ob-case-num">BKG #' + c.num + '</span></div>' +
                     '<div class="ob-case-name">' + esc(c.name || '') + '</div>' +
                     '<div class="ob-case-row">📍 ' + esc(placeOf(c)) + (c.approx ? ' <span class="ob-muted">(approx.)</span>' : '') + '</div>' +
                     '<div class="ob-case-row">📅 ' + (on ? esc(fmtDate(c.day)) + (c.interpolated ? ' <span class="ob-muted">(est.)</span>' : '') : '<span class="ob-muted">not infected yet (day ' + c.t + ')</span>') + '</div>' +
-                    '<div class="ob-case-row">🦠 Infected by: ' + (s ? qrz(s.call) + ' <span class="ob-muted">' + esc(placeOf(s)) + '</span>' : (c === cases[0] ? '<b>nobody. Patient zero.</b>' : '<span class="ob-muted">unknown / spontaneous</span>')) + '</div>' +
-                    '<div class="ob-case-row">☣ Infected ' + (on && kids.length ? plural(kids.length, 'ham') + ':' : 'nobody yet') + '</div>' +
-                    (kids.length ? '<ul class="ob-turf-list">' + kids.map(r => '<li>' + qrz(r.call) + ' <span class="ob-muted">' + esc(placeOf(r)) + ' · ' + esc(fmtDate(r.day)) + '</span></li>').join('') + '</ul>' : '') +
-                    '<div class="ob-note">Bright lines on the map are this case\'s chain. Tap the dot again to clear.</div>';
+                    '<div class="ob-case-row">🦠 Infected by: ' + (s ? pick(s.call) + ' <span class="ob-muted">' + esc(placeOf(s)) + '</span>' : (c === cases[0] ? '<b>nobody. Patient zero.</b>' : '<span class="ob-muted">unknown / spontaneous</span>')) + '</div>' +
+                    (chain.length > 1 ? '<div class="ob-case-row ob-chain">🧬 ' + chain.map(x => x === c ? '<b>' + esc(x.call) + '</b>' : pick(x.call)).join(' <span class="ob-chain-arrow">→</span> ') + '</div>' : '') +
+                    (rank ? '<div class="ob-case-row">☣ Virulence: <b>#' + rank.rank + '</b> carrier, ' + rank.total + ' downstream (' + rank.direct + ' direct)</div>' :
+                        '<div class="ob-case-row">☣ Infected nobody' + (on ? ' yet' : '') + '</div>') +
+                    (kids.length ? '<div class="ob-case-row">Who they infected, as of today:</div>' + treeHtml(c, cur, 0) : '') +
+                    '<div class="ob-note">Tap any callsign to follow the chain. Bright lines on the map are this case\'s links. Tap the dot again to clear.</div>';
                 return;
             }
             if (!selectedTurf) {
@@ -790,31 +872,59 @@
         });
 
         // ---- Playback --------------------------------------------------------------
-        // Time-based: the replay covers the whole outbreak in BASE_SECONDS at 1×,
-        // however fast or slow the device renders frames. `pos` keeps the
-        // fractional day so slow speeds don't stall on whole-day rounding.
+        // Time-based, so the speed multiplier is real whatever the frame rate,
+        // and time-warped: a quiet stretch between two cases never takes more
+        // than MAX_GAP_SECONDS at 1×, so the replay doesn't sit on empty days.
+        // The day counter still shows real days.
         const scrub = document.getElementById('obScrub');
         scrub.max = T;
         const playBtn = document.getElementById('obPlay');
-        const BASE_SECONDS = 14;
+        const BASE_SECONDS = 14;     // a full replay at 1× if no day were skipped
+        const MAX_GAP_SECONDS = 0.6;
+        const warp = (function () {
+            const days = [0, ...caseDays.filter(d => d > 0 && d < T), T];
+            const secPerDay = BASE_SECONDS / T;
+            const startDay = [], startSec = [], secs = [];
+            let acc = 0;
+            for (let i = 0; i < days.length - 1; i++) {
+                const gap = days[i + 1] - days[i];
+                startDay.push(days[i]); startSec.push(acc);
+                secs.push(Math.min(gap * secPerDay, MAX_GAP_SECONDS));
+                acc += secs[secs.length - 1];
+            }
+            const total = acc;
+            function toDay(sec) {
+                if (sec >= total) return T;
+                let i = 0; while (i + 1 < startSec.length && startSec[i + 1] <= sec) i++;
+                const gap = (i + 1 < days.length ? days[i + 1] : T) - startDay[i];
+                return startDay[i] + (secs[i] ? (sec - startSec[i]) / secs[i] * gap : 0);
+            }
+            function toSec(day) {
+                if (day >= T) return total;
+                let i = 0; while (i + 1 < startDay.length && startDay[i + 1] <= day) i++;
+                const gap = (i + 1 < days.length ? days[i + 1] : T) - startDay[i];
+                return startSec[i] + (gap ? (day - startDay[i]) / gap * secs[i] : 0);
+            }
+            return { total, toDay, toSec };
+        })();
         let speed = 1;
-        let pos = 0;
+        let pos = 0;               // playback seconds at 1×
         let raf = null, lastTs = null;
         function frame(ts) {
             if (lastTs == null) lastTs = ts;
             const dt = Math.min(0.5, (ts - lastTs) / 1000);
             lastTs = ts;
-            pos += dt * (T / BASE_SECONDS) * speed;
-            if (pos >= T) { render(T, true); stop(); return; }
-            render(pos);
+            pos += dt * speed;
+            if (pos >= warp.total) { render(T, true); stop(); return; }
+            render(warp.toDay(pos));
             raf = requestAnimationFrame(frame);
         }
         let autoplay = null;   // pending kick-off; any user action cancels it
         function play() {
             clearTimeout(autoplay); autoplay = null;
-            if (cur >= T) { render(0, true); pos = 0; }
+            if (cur >= T) render(0, true);
             if (raf) return;
-            pos = cur; lastTs = null;
+            pos = warp.toSec(cur); lastTs = null;
             raf = requestAnimationFrame(frame);
             playBtn.textContent = '❚❚ PAUSE';
         }
@@ -825,15 +935,17 @@
             playBtn.textContent = cur >= T ? '⟲ REPLAY' : '▶ PLAY';
             render(cur, true);
         }
-        function jump(t) { render(t, true); stop(); pos = cur; }
+        function jump(t) { render(t, true); stop(); pos = warp.toSec(cur); }
         playBtn.addEventListener('click', () => raf ? stop() : play());
         document.getElementById('obRestart').addEventListener('click', () => jump(0));
         document.getElementById('obEnd').addEventListener('click', () => jump(T));
+        document.getElementById('obNextCase').addEventListener('click', () => jump(nextCaseDay(cur)));
+        document.getElementById('obPrevCase').addEventListener('click', () => jump(prevCaseDay(cur)));
         scrub.addEventListener('input', () => jump(Number(scrub.value)));
-        document.querySelectorAll('.ob-speed-btn').forEach(btn => {
+        document.querySelectorAll('.ob-speed-btn[data-speed]').forEach(btn => {
             btn.addEventListener('click', () => {
                 speed = Number(btn.dataset.speed) || 1;
-                document.querySelectorAll('.ob-speed-btn').forEach(b => {
+                document.querySelectorAll('.ob-speed-btn[data-speed]').forEach(b => {
                     const on = b === btn;
                     b.classList.toggle('is-on', on);
                     b.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -841,10 +953,11 @@
             });
         });
         document.addEventListener('keydown', e => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
-            if (e.key === ' ') { e.preventDefault(); raf ? stop() : play(); }
-            if (e.key === 'ArrowRight') jump(cur + (e.shiftKey ? 30 : 1));
-            if (e.key === 'ArrowLeft') jump(cur - (e.shiftKey ? 30 : 1));
+            const tag = e.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            if (e.key === ' ' && tag !== 'BUTTON') { e.preventDefault(); raf ? stop() : play(); }
+            if (e.key === 'ArrowRight') { e.preventDefault(); jump(e.shiftKey ? cur + 30 : nextCaseDay(cur)); }
+            if (e.key === 'ArrowLeft') { e.preventDefault(); jump(e.shiftKey ? cur - 30 : prevCaseDay(cur)); }
         });
 
         const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
