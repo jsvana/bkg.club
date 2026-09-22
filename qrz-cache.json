@@ -306,6 +306,7 @@
   "KQ4UUD": {"fetched": "2026-09-19T23:26:55Z", "current_call": "KQ4UUD", "state": "AL", "country": "United States", "image": null, "grid": "EM61SH", "lat": 31.29, "lon": -86.46, "found": true},
   "KQ4VB": {"fetched": "2026-09-19T23:26:55Z", "current_call": "KQ4VB", "state": "AL", "country": "United States", "image": null, "grid": "EL88TB", "lat": 28.06, "lon": -82.4, "found": true},
   "KQ4VYQ": {"fetched": "2026-09-19T23:26:55Z", "current_call": "KQ4VYQ", "state": "AL", "country": "United States", "image": null, "grid": "EM64QR", "lat": 34.74, "lon": -86.65, "found": true},
+  "KQ4WJP": {"fetched": "2026-09-22T10:50:26Z", "current_call": "KQ4WJP", "state": "NC", "country": "United States", "image": "https://cdn-xml.qrz.com/p/kq4wjp/IMG_3980_jpeg.jpg", "grid": "EM85OQ", "lat": 35.7, "lon": -82.82, "found": true},
   "KR4BGU": {"fetched": "2026-09-19T23:26:55Z", "current_call": "KR4BGU", "state": "NC", "country": "United States", "image": "https://cdn-xml.qrz.com/u/kr4bgu/IMG_8344_jpeg.jpg", "grid": "EM95PH", "lat": 35.3, "lon": -80.72, "found": true},
   "KR4EBK": {"fetched": "2026-09-19T23:26:55Z", "current_call": "KR4EBK", "state": "NC", "country": "United States", "image": "https://cdn-xml.qrz.com/k/kr4ebk/IMG_5288.jpeg", "grid": "EM85SN", "lat": 35.55, "lon": -82.45, "found": true},
   "KR4FLM": {"fetched": "2026-09-19T23:26:55Z", "current_call": "KR4FLM", "state": "TN", "country": "United States", "image": "https://cdn-xml.qrz.com/m/kr4flm/IMG_0330_jpeg.jpg", "grid": "EM66KC", "lat": 36.08, "lon": -87.12, "found": true},
