@@ -7,7 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='brass' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23FFD700'/%3E%3Cstop offset='50%25' style='stop-color:%23D4AF37'/%3E%3Cstop offset='100%25' style='stop-color:%23B8860B'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='15' fill='%231a0a00' stroke='%23D4AF37' stroke-width='2'/%3E%3Cellipse cx='9' cy='13' rx='4' ry='5' fill='none' stroke='url(%23brass)' stroke-width='2.5'/%3E%3Cellipse cx='23' cy='13' rx='4' ry='5' fill='none' stroke='url(%23brass)' stroke-width='2.5'/%3E%3Crect x='5' y='20' width='22' height='6' rx='2' fill='url(%23brass)'/%3E%3Crect x='5' y='16' width='22' height='5' fill='url(%23brass)'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Bungee+Shade&family=Rubik+Glitch&family=Special+Elite&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Bungee+Shade&family=Rubik+Glitch&family=Special+Elite&display=swap" rel="stylesheet">
     <style>
         :root {
             --brass: #D4AF37;
@@ -29,7 +29,11 @@
         body {
             background: #000;
             color: #fff;
-            font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+            /* Comic Neue's bold is the body weight. Bangers, Special Elite and
+               Bungee only ship one weight, so never fake-bold them. */
+            font-weight: 700;
+            font-synthesis: style;
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
@@ -165,7 +169,7 @@
 
         .tagline {
             font-family: 'Special Elite', monospace;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: #000;
             background: var(--lime);
             padding: 2px 8px;
@@ -184,7 +188,7 @@
 
         .search-box input {
             border: none;
-            font-family: 'Comic Sans MS', cursive;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
             font-size: 12px;
             width: 150px;
         }
@@ -193,28 +197,38 @@
             background: linear-gradient(180deg, #666 0%, #333 100%);
             color: var(--brass);
             border: 2px outset #888;
-            font-family: 'Comic Sans MS', cursive;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
             font-size: 11px;
             font-weight: bold;
             cursor: pointer;
             padding: 2px 8px;
         }
 
+        /* Chip links: gold on black so they stay readable where the header
+           gradient runs to black, and big enough to tap. */
         .nav-links {
             display: flex;
-            gap: 5px;
-            font-size: 0.75rem;
+            gap: 6px;
+            font-size: 0.95rem;
             flex-wrap: wrap;
         }
 
         .nav-links a {
-            color: #000;
-            text-decoration: underline;
-            font-weight: bold;
+            color: var(--brass-light);
+            text-decoration: none;
+            font-weight: 700;
+            background: #1a1400;
+            border: 1px solid #5a4400;
+            border-radius: 3px;
+            padding: 5px 9px;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
         }
 
         .nav-links a:hover {
-            color: var(--blood-red);
+            color: #fff;
+            background: var(--blood-red);
+            border-color: var(--brass);
         }
 
         /* Marquee banner */
@@ -278,7 +292,7 @@
             left: 10px;
             background: var(--hot-pink);
             color: #000;
-            font-family: 'Comic Sans MS', cursive;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
             font-size: 10px;
             font-weight: bold;
             padding: 2px 8px;
@@ -342,7 +356,7 @@
 
         .profile-stats span {
             color: #ccc;
-            font-family: 'Comic Sans MS', cursive;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
         }
 
         .blink {
@@ -387,6 +401,7 @@
             color: var(--brass-light);
             text-decoration: underline;
             font-family: 'Arial', sans-serif;
+            font-weight: normal;
         }
 
         /* Right column - main content */
@@ -419,8 +434,8 @@
         }
 
         .mood-status {
-            font-family: 'Comic Sans MS', cursive;
-            font-size: 0.7rem;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+            font-size: 0.8rem;
             color: #fff;
         }
 
@@ -531,8 +546,8 @@
             background: rgba(0,0,0,0.6);
             border: 2px dashed var(--brass);
             padding: 15px;
-            font-family: 'Comic Sans MS', cursive;
-            font-size: 0.9rem;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+            font-size: 1rem;
             line-height: 1.6;
             position: relative;
         }
@@ -552,6 +567,7 @@
 
         .morse-code {
             font-family: 'Courier New', monospace;
+            font-weight: normal;
             color: var(--brass-light);
             font-size: 0.8rem;
             margin-top: 10px;
@@ -691,9 +707,9 @@
         }
 
         .bylaw-text {
-            font-family: 'Comic Sans MS', cursive;
-            font-size: 0.9rem;
-            color: #ccc;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+            font-size: 1rem;
+            color: #ececec;
             line-height: 1.5;
         }
 
@@ -768,16 +784,18 @@
 
         .step-title {
             font-family: 'Bangers', cursive;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 0 #000;
             color: var(--brass);
             margin-bottom: 8px;
         }
 
         .step-desc {
-            font-family: 'Comic Sans MS', cursive;
-            font-size: 0.8rem;
-            color: #aaa;
-            line-height: 1.4;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+            font-size: 1rem;
+            color: #ececec;
+            line-height: 1.5;
         }
 
         .join-verify-note {
@@ -786,9 +804,9 @@
             background: rgba(0,0,0,0.5);
             border: 2px dashed var(--blood-red);
             text-align: center;
-            font-family: 'Comic Sans MS', cursive;
-            font-size: 0.85rem;
-            color: #ccc;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+            font-size: 1rem;
+            color: #ececec;
             line-height: 1.5;
         }
 
@@ -933,9 +951,9 @@
         }
 
         .member-name {
-            font-family: 'Comic Sans MS', cursive;
-            font-size: 0.8rem;
-            color: #888;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+            font-size: 0.9rem;
+            color: #bbb;
             margin-top: 3px;
         }
 
@@ -1362,6 +1380,7 @@
 
         .music-player-artist {
             font-family: 'Courier New', monospace;
+            font-weight: normal;
             font-size: 0.85rem;
             color: var(--lime);
             letter-spacing: 2px;
@@ -1403,8 +1422,8 @@
 
         .footer-links a {
             color: var(--brass-light);
-            font-family: 'Comic Sans MS', cursive;
-            font-size: 0.9rem;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+            font-size: 1rem;
             margin: 0 10px;
             text-decoration: underline;
         }
@@ -1419,6 +1438,7 @@
             background: #000;
             color: var(--lime);
             font-family: 'Courier New', monospace;
+            font-weight: normal;
             padding: 5px 15px;
             border: 3px inset #444;
             display: inline-block;
@@ -1459,6 +1479,34 @@
                 gap: 10px;
             }
 
+            /* Nav becomes its own black bar across the bottom of the header. */
+            .nav-links {
+                align-self: stretch;
+                margin: 0 -10px -10px;
+                padding: 8px 8px 10px;
+                background: #000;
+                border-top: 3px ridge var(--brass);
+            }
+
+            /* Phones have no margins for the knuckles to float in, so keep
+               them small, faint and behind the text. */
+            .floating-knuckle {
+                font-size: 40px;
+                opacity: 0.22;
+                z-index: -1;
+            }
+
+            /* The INITIATION ribbon has to fit inside the box on a phone. */
+            .join-section {
+                padding: 22px 14px 16px;
+            }
+
+            .join-section::before {
+                font-size: 1.3rem;
+                padding: 5px 14px;
+                letter-spacing: 2px;
+            }
+
             .smokin-text {
                 font-size: 2rem;
             }
@@ -1475,7 +1523,7 @@
 
         .map-subtitle {
             text-align: center;
-            font-family: 'Comic Sans MS', cursive;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
             color: var(--lime);
             font-weight: bold;
             margin-bottom: 20px;
@@ -1584,9 +1632,9 @@
         }
 
         .map-info-default {
-            color: #aaa;
-            font-family: 'Comic Sans MS', cursive;
-            font-size: 0.9rem;
+            color: #ddd;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+            font-size: 1rem;
             line-height: 1.5;
         }
 
@@ -1723,7 +1771,7 @@
         .leader-row:hover { background: rgba(212, 175, 55, 0.08); }
         .leader-rank { font-family: 'Bangers', cursive; font-size: 1.3rem; color: var(--brass); width: 44px; }
         .leader-abbr { font-family: 'Bangers', cursive; font-size: 1.2rem; color: var(--brass-light); }
-        .leader-name { font-family: 'Comic Sans MS', cursive; font-size: 0.8rem; color: #888; flex: 1; }
+        .leader-name { font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive; font-size: 0.9rem; color: #bbb; flex: 1; }
         .leader-count {
             font-family: 'Special Elite', monospace;
             font-size: 0.8rem;
@@ -1771,17 +1819,17 @@
                 <button>SEARCH</button>
             </div>
             <nav class="nav-links">
-                <a href="#home">HOME</a> |
-                <a href="#bylaws">BYLAWS</a> |
-                <a href="#join">JOIN</a> |
-                <a href="#roster">ROSTER</a> |
-                <a href="#map">MAP</a> |
-                <a href="nearby.html">NEARBY</a> |
-                <a href="tree.html">DOWNLINE</a> |
-                <a href="recruit.html">RECRUIT</a> |
-                <a href="clubs.html">CLUBS</a> |
-                <a href="safety.html">SAFETY</a> |
-                <a href="outbreak.html">OUTBREAK</a> |
+                <a href="#home">HOME</a>
+                <a href="#bylaws">BYLAWS</a>
+                <a href="#join">JOIN</a>
+                <a href="#roster">ROSTER</a>
+                <a href="#map">MAP</a>
+                <a href="nearby.html">NEARBY</a>
+                <a href="tree.html">DOWNLINE</a>
+                <a href="recruit.html">RECRUIT</a>
+                <a href="clubs.html">CLUBS</a>
+                <a href="safety.html">SAFETY</a>
+                <a href="outbreak.html">OUTBREAK</a>
                 <a href="https://discord.gg/wDs5dth22k" target="_blank" rel="noopener">DISCORD</a>
             </nav>
         </div>
