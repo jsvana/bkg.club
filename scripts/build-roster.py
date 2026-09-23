@@ -46,17 +46,13 @@ MUGSHOT_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 # QRZ lookup cache (qrz-cache.json, committed back by the deploy workflow).
 # A full roster is one QRZ request per member; almost all of them repeat the
-# previous build's answer. Entries older than QRZ_CACHE_MAX_AGE_DAYS are
-# refreshed, at most QRZ_REFRESH_PER_BUILD per build (oldest first) so the
-# roster cycles through QRZ gradually instead of all at once. New members
-# are always looked up.
+# Every build looks up every member live; the
+# cache is only the fallback when a lookup (or login) fails.
 QRZ_CACHE_PATH = REPO_ROOT / "qrz-cache.json"
 QRZ_CACHE_ABOUT = (
     "Cached QRZ lookups for the roster, keyed by the callsign on the sheet. "
     "Auto-refreshed by scripts/build-roster.py; safe to delete (it just rebuilds)."
 )
-QRZ_CACHE_MAX_AGE_DAYS = 7
-QRZ_REFRESH_PER_BUILD = 60
 
 NEW_BADGE_LIMIT = 3  # last N members get the "NEW!!" badge
 OG_BADGE_NUMBERS = {2}  # member numbers that get the "OG" badge (founder #1 has its own treatment)
@@ -611,24 +607,14 @@ def save_qrz_cache(cache: dict[str, dict]) -> None:
     QRZ_CACHE_PATH.write_text("\n".join(lines) + "\n")
 
 
-def _cache_age_days(entry: dict, now: datetime) -> float:
-    try:
-        fetched = datetime.strptime(entry["fetched"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-    except (KeyError, ValueError, TypeError):
-        return float("inf")
-    return (now - fetched).total_seconds() / 86400
-
-
 def annotate_qrz(members: list[dict]) -> None:
     """Set member['state'], member['country'], member['state_og'],
     member['country_og'], member['grid'/'lat'/'lon'] and member['mugshot_path']
     in place, from QRZ via the qrz-cache.json cache.
 
-    Only new members and the oldest stale cache entries (see
-    QRZ_REFRESH_PER_BUILD) hit QRZ; everyone else comes from the cache. A
-    lookup that fails keeps the cached answer. Requires env vars QRZ_USERNAME
-    and QRZ_PASSWORD (an XML-subscription QRZ account) when anything needs
-    fetching; raises RuntimeError if they're missing or login fails and there
+    Every member is looked up live on QRZ; a lookup that fails falls back
+    to the cached answer. Requires env vars QRZ_USERNAME and QRZ_PASSWORD
+    (an XML-subscription QRZ account); raises RuntimeError if they're missing or login fails and there
     is no cache to fall back on.
     """
     for member in members:
@@ -642,30 +628,10 @@ def annotate_qrz(members: list[dict]) -> None:
         member["lon"] = None
 
     cache = load_qrz_cache()
-    now = datetime.now(timezone.utc)
-    stamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # Decide who gets a live lookup this build.
-    to_fetch: set[str] = set()
-    stale: list[tuple[float, str]] = []
-    for member in members:
-        key = member["callsign"].upper()
-        entry = cache.get(key)
-        if entry is None:
-            to_fetch.add(key)
-        else:
-            age = _cache_age_days(entry, now)
-            if age > QRZ_CACHE_MAX_AGE_DAYS:
-                stale.append((age, key))
-    stale.sort(reverse=True)
-    skipped_stale = max(0, len(stale) - QRZ_REFRESH_PER_BUILD)
-    to_fetch.update(key for _age, key in stale[:QRZ_REFRESH_PER_BUILD])
-    print(
-        f"  QRZ cache: {len(cache)} entries; fetching {len(to_fetch)} "
-        f"({len(to_fetch) - min(len(stale), QRZ_REFRESH_PER_BUILD)} new, "
-        f"{min(len(stale), QRZ_REFRESH_PER_BUILD)} stale refresh, {skipped_stale} stale deferred)",
-        file=sys.stderr,
-    )
+    to_fetch = {member["callsign"].upper() for member in members}
+    print(f"  QRZ cache: {len(cache)} entries; fetching {len(to_fetch)} live", file=sys.stderr)
 
     session_key = None
     if to_fetch:
@@ -688,7 +654,7 @@ def annotate_qrz(members: list[dict]) -> None:
         key = member["callsign"].upper()
         cached = cache.get(key)
         info = None
-        if key in to_fetch and session_key:
+        if session_key:
             info = qrz_fetch_callsign(session_key, key, debug=not debug_done)
             debug_done = True
             if info is None:
@@ -703,6 +669,9 @@ def annotate_qrz(members: list[dict]) -> None:
                 for coord in ("lat", "lon"):
                     if entry.get(coord) is not None:
                         entry[coord] = round(entry[coord], 2)
+                # Keep old stamp; avoids no-op commits
+                if cached and all(cached.get(f) == entry[f] for f in QRZ_CACHE_FIELDS):
+                    entry["fetched"] = cached["fetched"]
                 cache[key] = entry
         if info is None:
             info = {f: cached.get(f) for f in QRZ_CACHE_FIELDS} if cached else {f: None for f in QRZ_CACHE_FIELDS}
