@@ -25,8 +25,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Mugshots are gitignored; keep last build's
-      # copies as the fallback when a QRZ lookup fails.
+      # Mugshots are gitignored; keep them between builds.
+      # Unchanged photos skip download; failed lookups reuse them.
       - name: Restore mugshots
         uses: actions/cache@v4
         with:

@@ -43,6 +43,8 @@ MUGSHOT_DIR = REPO_ROOT / "images" / "mugshots"
 MUGSHOT_REL_DIR = "images/mugshots"
 MUGSHOT_OVERRIDE_DIR = REPO_ROOT / "images" / "mugshots-override"
 MUGSHOT_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+# Callsign -> QRZ image URL of each file
+MUGSHOT_SOURCES_PATH = MUGSHOT_DIR / ".sources.json"
 
 # QRZ lookup cache (qrz-cache.json, committed back by the deploy workflow).
 # A full roster is one QRZ request per member; almost all of them repeat the
@@ -525,8 +527,31 @@ def local_override_mugshot(callsign: str) -> str | None:
     return None
 
 
-def download_mugshot(callsign: str, url: str) -> str | None:
-    """Download a QRZ profile image. Returns the repo-relative path, or None on failure."""
+def load_mugshot_sources() -> dict[str, str]:
+    """Image URL behind each mugshot file on disk.
+
+    Lives beside the files in the workflow's mugshot cache (never
+    committed), so an unchanged QRZ image isn't downloaded again.
+    """
+    try:
+        data = json.loads(MUGSHOT_SOURCES_PATH.read_text())
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def save_mugshot_sources(sources: dict[str, str]) -> None:
+    MUGSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    MUGSHOT_SOURCES_PATH.write_text(json.dumps(sources, indent=0, sort_keys=True) + "\n")
+
+
+def download_mugshot(callsign: str, url: str, sources: dict[str, str]) -> str | None:
+    """Download a QRZ profile image, reusing the file on disk when its URL
+    hasn't changed. Returns the repo-relative path, or None on failure."""
+    if sources.get(callsign) == url:
+        existing = previous_mugshot(callsign)
+        if existing:
+            return existing
     parsed = urllib.parse.urlparse(url)
     suffix = Path(parsed.path).suffix.lower()
     if suffix not in MUGSHOT_EXTS:
@@ -540,6 +565,7 @@ def download_mugshot(callsign: str, url: str) -> str | None:
         old.unlink()
     filename = f"{callsign}{suffix}"
     (MUGSHOT_DIR / filename).write_bytes(data)
+    sources[callsign] = url
     return f"{MUGSHOT_REL_DIR}/{filename}"
 
 
@@ -626,9 +652,10 @@ def annotate_qrz(members: list[dict]) -> None:
 
     State and country come from the sheet's QTH column. Every member is
     looked up live on QRZ for their current callsign, mugshot and
-    coordinates. qrz-cache.json stores only each current callsign, used when
-    a lookup fails; that member then keeps last build's mugshot file but has
-    no coordinates this build. Requires env vars QRZ_USERNAME and
+    coordinates. qrz-cache.json stores only changed callsigns, used when a
+    lookup fails; that member then keeps last build's mugshot file but has
+    no coordinates this build. Mugshots download only when the QRZ image
+    URL changes. Requires env vars QRZ_USERNAME and
     QRZ_PASSWORD (an XML-subscription QRZ account).
     """
     for member in members:
@@ -641,6 +668,7 @@ def annotate_qrz(members: list[dict]) -> None:
         member["lon"] = None
 
     cache = load_qrz_cache()
+    sources = load_mugshot_sources()
     print(f"  QRZ cache: {len(cache)} callsigns; fetching {len(members)} live", file=sys.stderr)
 
     session_key = None
@@ -691,12 +719,13 @@ def annotate_qrz(members: list[dict]) -> None:
             member["mugshot_path"] = previous_mugshot(member["callsign"])
         elif info.get("image"):
             member["mugshot_path"] = download_mugshot(
-                member["callsign"], info["image"]
+                member["callsign"], info["image"], sources
             ) or previous_mugshot(member["callsign"])
 
     if members:
         print(f"  QRZ lookups: {fetched} fetched, {failed} failed", file=sys.stderr)
     save_qrz_cache(cache)
+    save_mugshot_sources(sources)
 
     resolved = sum(1 for m in members if member_map_bucket(m))
     dx = sum(1 for m in members if (member_map_bucket(m) or ("",))[0] == "dx")
