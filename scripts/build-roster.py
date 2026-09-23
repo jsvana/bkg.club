@@ -49,6 +49,7 @@ MUGSHOT_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 # Every build looks up every member live; the
 # cache is only the fallback when a lookup (or login) fails.
 QRZ_CACHE_PATH = REPO_ROOT / "qrz-cache.json"
+QRZ_MAX_CONSECUTIVE_FAILURES = 5  # then use cache only
 QRZ_CACHE_ABOUT = (
     "Cached QRZ lookups for the roster, keyed by the callsign on the sheet. "
     "Auto-refreshed by scripts/build-roster.py; safe to delete (it just rebuilds)."
@@ -648,7 +649,7 @@ def annotate_qrz(members: list[dict]) -> None:
                     raise RuntimeError("QRZ login failed")
                 print("  QRZ login failed; building from the cache only", file=sys.stderr)
 
-    fetched = failed = 0
+    fetched = failed = streak = 0
     debug_done = False
     for member in members:
         key = member["callsign"].upper()
@@ -659,10 +660,15 @@ def annotate_qrz(members: list[dict]) -> None:
             debug_done = True
             if info is None:
                 failed += 1
+                streak += 1
+                if streak >= QRZ_MAX_CONSECUTIVE_FAILURES:
+                    print(f"  QRZ failed {streak} times in a row; using cache", file=sys.stderr)
+                    session_key = None
                 if cached:
                     print(f"  QRZ lookup failed for {key}; keeping cached answer", file=sys.stderr)
             else:
                 fetched += 1
+                streak = 0
                 entry = {"fetched": stamp, **{f: info.get(f) for f in QRZ_CACHE_FIELDS}}
                 # The cache is committed to a public repo: keep coordinates as
                 # coarse as what the site publishes (~1 km), never QRZ's exact ones.
