@@ -25,14 +25,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Mugshots are gitignored; keep them between builds so only new or
-      # changed photos are downloaded. The key follows the QRZ cache, so a
-      # fresh copy is saved whenever the lookups change.
+      # Mugshots are gitignored; keep last build's
+      # copies as the fallback when a QRZ lookup fails.
       - name: Restore mugshots
         uses: actions/cache@v4
         with:
           path: images/mugshots
-          key: mugshots-${{ hashFiles('qrz-cache.json') }}
+          key: mugshots-${{ github.run_id }}
           restore-keys: |
             mugshots-
 
