@@ -42,7 +42,8 @@ jobs:
           QRZ_PASSWORD: ${{ secrets.QRZ_PASSWORD }}
         run: python3 scripts/build-roster.py
 
-      # Persist QRZ lookups as the fallback for failed lookups. Pushes made with GITHUB_TOKEN don't trigger workflows, and
+      # Persist QRZ lookups as the fallback for failed lookups.
+      # Pushes made with GITHUB_TOKEN don't trigger workflows, and
       # [skip ci] makes that explicit, so this can't loop.
       - name: Commit refreshed QRZ cache
         run: |
