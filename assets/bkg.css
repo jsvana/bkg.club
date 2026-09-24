@@ -24,7 +24,11 @@
 body {
     background: #000;
     color: #fff;
-    font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+    font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+    /* Comic Neue's bold is the body weight. Bangers, Special Elite
+       and Anton only ship one weight, so never fake-bold them. */
+    font-weight: 700;
+    font-synthesis: style;
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
@@ -100,7 +104,7 @@ body {
 @keyframes colorPulse { from { color: var(--blood-red); } to { color: #ff0000; } }
 .tagline {
     font-family: 'Special Elite', monospace;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: #000;
     background: var(--lime);
     padding: 2px 8px;
@@ -108,10 +112,21 @@ body {
     display: inline-block;
     border: 2px dashed #000;
 }
-.nav-links { display: flex; gap: 5px; font-size: 0.75rem; flex-wrap: wrap; }
-.nav-links a { color: #000; text-decoration: underline; font-weight: bold; }
-.nav-links a:hover { color: var(--blood-red); }
-.nav-links a.active { color: var(--blood-red); background: #000; padding: 1px 5px; border-radius: 3px; }
+/* Chip links: gold on black so they stay readable where the header
+   gradient runs to black, and big enough to tap. */
+.nav-links { display: flex; gap: 6px; font-size: 0.95rem; flex-wrap: wrap; }
+.nav-links a {
+    color: var(--brass-light);
+    text-decoration: none;
+    font-weight: 700;
+    background: #1a1400;
+    border: 1px solid #5a4400;
+    border-radius: 3px;
+    padding: 5px 9px;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+}
+.nav-links a:hover, .nav-links a.active { color: #fff; background: var(--blood-red); border-color: var(--brass); }
 
 /* Marquee */
 .marquee-container {
@@ -255,7 +270,7 @@ body {
 .kingpin-rank { font-family: 'Bangers', cursive; font-size: 1.3rem; color: var(--brass); width: 38px; }
 .kingpin-call { font-family: 'Bangers', cursive; font-size: 1.2rem; color: var(--brass-light); text-decoration: none; }
 .kingpin-call:hover { text-shadow: 0 0 10px var(--brass); }
-.kingpin-name { font-family: 'Comic Sans MS', cursive; font-size: 0.8rem; color: #888; flex: 1; }
+.kingpin-name { font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive; font-size: 0.9rem; color: #bbb; flex: 1; }
 .kingpin-count {
     font-family: 'Special Elite', monospace;
     font-size: 0.8rem;
@@ -362,7 +377,7 @@ body {
 }
 .node-call:hover { color: var(--brass-light); text-shadow: 1px 1px 0 var(--blood-red), 0 0 10px var(--brass); }
 .node-num { font-family: 'Special Elite', monospace; font-size: 0.7rem; color: #888; }
-.node-name { font-family: 'Comic Sans MS', cursive; font-size: 0.8rem; color: #999; }
+.node-name { font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive; font-size: 0.9rem; color: #bbb; }
 .node-crown { font-size: 1rem; align-self: center; }
 
 /* direct / indirect induction badges */
@@ -416,7 +431,7 @@ body {
 .form-row label .req { color: var(--hot-pink); }
 .form-row input, .form-row select, .form-row textarea {
     width: 100%;
-    font-family: 'Comic Sans MS', cursive;
+    font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
     font-size: 0.95rem;
     padding: 8px;
     background: #000;
@@ -447,10 +462,11 @@ body {
 .submit-btn:active { border-style: inset; }
 .submit-btn:disabled { opacity: 0.5; }
 
+.form-note strong { color: var(--brass-light); }
 .form-note {
     font-family: 'Special Elite', monospace;
-    font-size: 0.78rem;
-    color: #999;
+    font-size: 0.9rem;
+    color: #ccc;
     background: #000;
     border: 2px solid var(--brass-dark);
     padding: 12px;
@@ -474,7 +490,7 @@ body {
     text-shadow: 2px 2px 0 #000;
     margin-bottom: 12px;
 }
-.form-success p { font-family: 'Comic Sans MS', cursive; color: #ccc; margin-bottom: 8px; }
+.form-success p { font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive; font-size: 1rem; color: #e6e6e6; margin-bottom: 8px; }
 .config-warning {
     background: var(--blood-red);
     color: var(--brass-light);
@@ -556,12 +572,26 @@ body {
 }
 .footer-text { font-family: 'Special Elite', monospace; color: var(--brass); font-size: 0.8rem; margin-bottom: 10px; }
 .footer-links { margin-bottom: 5px; }
-.footer-links a { color: var(--brass-light); font-family: 'Comic Sans MS', cursive; font-size: 0.9rem; margin: 0 10px; text-decoration: underline; }
+.footer-links a { color: var(--brass-light); font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive; font-size: 1rem; margin: 0 10px; text-decoration: underline; }
 
+@media (max-width: 768px) {
+    /* Nav becomes its own black bar across the bottom of the header. */
+    .nav-links {
+        flex: 1 1 100%;
+        width: calc(100% + 20px);
+        margin: 0 -10px -10px;
+        padding: 8px 8px 10px;
+        background: #000;
+        border-top: 3px ridge var(--brass);
+    }
+    /* Phones have no margins for the knuckles to float in, so keep them
+       small, faint and behind the text. */
+    .floating-knuckle { font-size: 40px; opacity: 0.22; z-index: -1; }
+}
 @media (max-width: 600px) {
     .form-grid { grid-template-columns: 1fr; }
     .section-title { font-size: 1.8rem; }
-    .logo-text { font-size: 1.5rem; }
+    .logo-text { font-size: 1.9rem; }
     /* tighten the tree so deep generations still fit a phone without side-scroll */
     .tree-children { margin-left: 12px; padding-left: 10px; }
     .node-card { padding: 7px 9px; gap: 8px; }
@@ -876,7 +906,7 @@ body {
 .incident-row:last-child { border-bottom: none; }
 .incident-num { font-family: 'Bangers', cursive; font-size: 1.15rem; color: var(--brass); white-space: nowrap; }
 .incident-date { font-family: 'Special Elite', monospace; font-size: 0.78rem; color: var(--lime); white-space: nowrap; }
-.incident-what { font-family: 'Comic Sans MS', cursive; font-size: 0.85rem; color: #ddd; }
+.incident-what { font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive; font-size: 0.95rem; color: #e6e6e6; }
 .incident-who { font-family: 'Bangers', cursive; color: var(--brass-light); text-decoration: none; letter-spacing: 1px; margin-right: 6px; }
 .incident-who:hover { text-shadow: 0 0 10px var(--brass); }
 .incident-streak {
@@ -1022,7 +1052,7 @@ body {
 .ob-trace input {
     flex: 1;
     min-width: 0;
-    font-family: 'Comic Sans MS', cursive;
+    font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
     font-size: 0.95rem;
     text-transform: uppercase;
     padding: 5px 8px;
@@ -1065,7 +1095,7 @@ body {
 .ob-vir-rank { font-family: 'Bangers', cursive; font-size: 1.2rem; color: var(--brass); }
 .ob-vir-main { min-width: 0; }
 .ob-vir-call { font-family: 'Bangers', cursive; font-size: 1.15rem; color: var(--brass-light); letter-spacing: 1px; }
-.ob-vir-name { font-family: 'Comic Sans MS', cursive; font-size: 0.75rem; color: #888; }
+.ob-vir-name { font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive; font-size: 0.85rem; color: #bbb; }
 .ob-vir-bar { display: block; height: 6px; margin-top: 4px; background: #000; border: 1px solid var(--brass-dark); }
 .ob-vir-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--blood-red), var(--hot-pink)); }
 .ob-vir-count {
@@ -1175,7 +1205,7 @@ body {
 .ob-panel-title .ob-muted { font-family: 'Special Elite', monospace; font-size: 0.75rem; text-shadow: none; letter-spacing: 0; }
 .ob-panel-sub { font-family: 'Special Elite', monospace; font-size: 0.75rem; color: #888; margin-bottom: 10px; line-height: 1.4; }
 .ob-panel-sub a { color: var(--brass-light); }
-.ob-panel-body { font-family: 'Comic Sans MS', cursive; font-size: 0.85rem; color: #ccc; line-height: 1.5; }
+.ob-panel-body { font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive; font-size: 0.95rem; color: #e6e6e6; line-height: 1.5; }
 .ob-muted { color: #777; font-family: 'Special Elite', monospace; font-size: 0.75rem; }
 .ob-note { margin-top: 10px; font-family: 'Special Elite', monospace; font-size: 0.72rem; color: var(--brass); line-height: 1.4; }
 .ob-call {
@@ -1267,9 +1297,9 @@ body {
     padding: 8px 6px;
     border-left: 4px solid var(--brass-dark);
     border-bottom: 1px dashed rgba(212, 175, 55, 0.25);
-    font-family: 'Comic Sans MS', cursive;
-    font-size: 0.82rem;
-    color: #ccc;
+    font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', cursive;
+    font-size: 0.9rem;
+    color: #e6e6e6;
     line-height: 1.45;
 }
 .ob-log-row:last-child { border-bottom: none; }

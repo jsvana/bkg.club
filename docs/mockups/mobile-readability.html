@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- Mobile readability mockups for review. Not linked from the site; open directly. -->
+</head>
+<body style="margin:0">
+<title>BKG Mobile Readability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Comic+Neue:wght@400;700&family=Courier+Prime:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Luckiest+Guy&family=Nunito:wght@400;700;800&family=Patrick+Hand&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  /* ---------- review chrome (theme-aware) ---------- */
+  :root {
+    --bg: #eeeff2;
+    --bg-2: #ffffff;
+    --ink: #17191e;
+    --ink-2: #4c5058;
+    --line: #d3d5db;
+    --brass: #b8860b;
+    --brass-ink: #6e4f00;
+    --bad: #b3261e;
+    --bad-bg: #fbe9e7;
+    --good: #1f6e3c;
+    --good-bg: #e4f3e9;
+    --chrome-font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141518; --bg-2: #1e2025; --ink: #ebe9e2; --ink-2: #a5a8b1; --line: #33363d;
+      --brass: #d4af37; --brass-ink: #e6c65a;
+      --bad: #ff8a80; --bad-bg: #3a1c1a; --good: #7fd49a; --good-bg: #1a3324;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141518; --bg-2: #1e2025; --ink: #ebe9e2; --ink-2: #a5a8b1; --line: #33363d;
+    --brass: #d4af37; --brass-ink: #e6c65a;
+    --bad: #ff8a80; --bad-bg: #3a1c1a; --good: #7fd49a; --good-bg: #1a3324;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: var(--chrome-font); font-size: 16px; line-height: 1.5; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding-block: 28px 64px; padding-inline: 16px; }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.15; margin: 0; }
+  h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.01em; }
+  h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 10px; }
+  p { margin: 0; max-width: 68ch; }
+  .lede { color: var(--ink-2); margin-top: 8px; }
+  .eyebrow { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass-ink); }
+  section { margin-top: 40px; }
+  a { color: var(--brass-ink); }
+
+  .findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
+  .finding { background: var(--bg-2); border: 1px solid var(--line); border-left: 4px solid var(--bad); padding: 12px 14px; border-radius: 4px; }
+  .finding b { display: block; margin-bottom: 4px; }
+  .finding p { font-size: 0.92rem; color: var(--ink-2); }
+
+  /* option strip */
+  .strip { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; margin-top: 24px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .strip::-webkit-scrollbar { display: none; }
+  .strip a { flex: none; text-decoration: none; color: var(--ink); background: var(--bg-2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 0.9rem; font-weight: 500; }
+  .strip a:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .strip a .k { font-family: var(--mono); color: var(--brass-ink); margin-right: 6px; }
+
+  /* frame rail */
+  .rail { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x proximity; padding-block: 18px 8px; align-items: flex-start; }
+  .opt { flex: none; width: min(375px, 100%); scroll-snap-align: start; scroll-margin-inline-start: 0; }
+  .opt-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .opt-head .k { font-family: var(--mono); font-size: 1.1rem; color: var(--brass-ink); }
+  .opt-head b { font-size: 1rem; }
+  .opt-notes { font-size: 0.86rem; color: var(--ink-2); margin-top: 10px; }
+  .opt-notes ul { margin: 6px 0 0; padding-left: 18px; }
+  .opt-notes li { margin-top: 3px; }
+  .verdict { display: inline-block; font-size: 0.75rem; font-family: var(--mono); padding: 2px 8px; border-radius: 3px; margin-left: auto; }
+  .verdict.bad { color: var(--bad); background: var(--bad-bg); }
+  .verdict.good { color: var(--good); background: var(--good-bg); }
+
+  /* comparison table */
+  .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--bg-2); }
+  table { border-collapse: collapse; width: 100%; min-width: 860px; font-size: 0.86rem; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; background: var(--bg); position: sticky; top: 0; }
+  th:first-child, td:first-child { position: sticky; left: 0; background: var(--bg-2); font-weight: 600; min-width: 150px; }
+  th:first-child { background: var(--bg); }
+  td { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-2); }
+  td.cur { color: var(--bad); }
+  tr:last-child td { border-bottom: 0; }
+
+  .approve { background: var(--bg-2); border: 1px solid var(--line); border-radius: 4px; padding: 16px; }
+  .approve ol { margin: 8px 0 0; padding-left: 20px; }
+  .approve li { margin-top: 4px; }
+
+  /* ---------- phone frames: single-theme, mirrors bkg.css ---------- */
+  .ph {
+    --brass: #D4AF37; --brass-light: #FFD700; --brass-dark: #B8860B; --blood-red: #8B0000; --lime: #39FF14;
+    width: 100%; border: 6px solid #2b2d33; border-radius: 26px; background: #000; color: #fff;
+    overflow: hidden; position: relative; box-shadow: 0 14px 30px rgba(0,0,0,0.25);
+    font-family: var(--fb); line-height: 1.4;
+  }
+  .ph * { box-sizing: border-box; }
+  .scr { position: relative; overflow: hidden; background:
+      url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><text x="50" y="60" text-anchor="middle" font-size="40" opacity="0.15" fill="%23D4AF37">🤜</text></svg>'),
+      repeating-linear-gradient(0deg, #000 0px, #000 2px, #111 2px, #111 4px);
+    background-size: 100px 100px, 4px 4px; }
+  .knk { position: absolute; font-size: var(--knk-size); opacity: var(--knk-op); z-index: var(--knk-z); pointer-events: none; filter: drop-shadow(0 0 10px rgba(212,175,55,0.8)); }
+  .knk:nth-of-type(1) { top: 42%; left: 2%; }
+  .knk:nth-of-type(2) { top: 58%; right: 3%; transform: scaleX(-1); }
+  .knk:nth-of-type(3) { top: 80%; left: 4%; }
+  .knk:nth-of-type(4) { top: 93%; right: 5%; transform: scaleX(-1); }
+  .content { position: relative; z-index: 1; }
+
+  .hd { background: linear-gradient(180deg, var(--brass) 0%, var(--brass-dark) 50%, #000 100%); padding: 10px; border-bottom: 5px ridge var(--brass); display: flex; flex-direction: column; gap: 10px; }
+  .logo { font-family: 'Bangers', cursive; font-size: var(--logo-size); color: #000; letter-spacing: -2px; text-shadow: 2px 2px 0 var(--brass-light), -1px -1px 0 var(--blood-red), 3px 3px 5px rgba(0,0,0,0.5); line-height: 1; }
+  .logo span { color: var(--blood-red); }
+  .tag { font-family: var(--fl); font-size: var(--tag-size); color: #000; background: var(--lime); padding: 2px 8px; transform: rotate(-2deg); display: inline-block; border: 2px dashed #000; align-self: flex-start; }
+  .nv { display: flex; flex-wrap: wrap; gap: var(--nav-gap); font-family: var(--fn); font-size: var(--nav-size); font-weight: bold; }
+  .nv a { text-decoration: underline; color: #000; }
+  .nv .sep { color: #000; }
+  /* nav bar variant (options A–D) */
+  .navbar .nv { background: #000; padding: 8px 8px 10px; border-bottom: 3px ridge var(--brass); margin: 0 -10px -10px; }
+  .navbar .nv .sep { display: none; }
+  .navbar .nv a { text-decoration: none; color: var(--brass-light); background: #1a1400; border: 1px solid #5a4400; border-radius: 3px; padding: 5px 9px; line-height: 1.2; letter-spacing: 0.02em; }
+  .navbar .nv a.active { background: var(--blood-red); color: #fff; border-color: var(--brass); }
+
+  .mq { background: var(--blood-red); border-top: 3px ridge var(--brass); border-bottom: 3px ridge var(--brass); overflow: hidden; padding: 5px 0; }
+  .mq-t { display: inline-block; white-space: nowrap; animation: mq 15s linear infinite; font-family: 'Bangers', cursive; font-size: var(--mq-size); color: var(--brass-light); text-shadow: 2px 2px 0 #000; }
+  @keyframes mq { from { transform: translateX(375px); } to { transform: translateX(-100%); } }
+  @media (prefers-reduced-motion: reduce) { .mq-t { animation: none; } }
+
+  .main { padding: 20px 12px; }
+  .join { background: linear-gradient(135deg, rgba(139,0,0,0.4) 0%, transparent 50%), linear-gradient(225deg, rgba(212,175,55,0.2) 0%, transparent 50%), #111; border: 5px double var(--brass); padding: var(--join-pad); margin: 30px 0 20px; position: relative; }
+  .join-lab { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: linear-gradient(180deg, var(--brass) 0%, var(--brass-dark) 100%); color: #000; font-family: var(--fh); font-size: var(--lab-size); padding: 5px var(--lab-pad); border: 3px ridge var(--brass-light); letter-spacing: var(--lab-track); white-space: nowrap; line-height: 1.2; }
+  .steps { display: grid; gap: 16px; margin-top: 14px; }
+  .step { text-align: center; padding: 15px 12px; background: rgba(0,0,0,0.5); border: 2px dashed var(--brass); }
+  .num { width: 54px; height: 54px; background: linear-gradient(135deg, var(--blood-red) 0%, #5a0000 100%); color: var(--brass-light); font-family: 'Bangers', cursive; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; transform: rotate(45deg); border: 3px solid var(--brass); box-shadow: 0 0 15px rgba(139,0,0,0.5); }
+  .num span { transform: rotate(-45deg); }
+  .st { font-family: var(--fh); font-size: var(--st-size); color: var(--brass); margin: 0 0 8px; letter-spacing: var(--st-track); text-shadow: var(--st-shadow); line-height: 1.1; font-weight: normal; }
+  .sd { font-family: var(--fb); font-size: var(--body-size); color: var(--body-color); line-height: var(--lh); margin: 0; font-weight: var(--body-weight); }
+  .note { margin-top: 16px; padding: 12px 14px; background: rgba(0,0,0,0.5); border: 2px dashed var(--blood-red); text-align: center; font-family: var(--fb); font-size: var(--body-size); color: var(--body-color); line-height: var(--lh); font-weight: var(--body-weight); }
+  .note strong { color: var(--brass); }
+
+  .bylaw { display: flex; border: 3px solid var(--brass); background: linear-gradient(90deg, rgba(139,0,0,0.3) 0%, transparent 100%); margin-top: 20px; }
+  .bnum { font-family: 'Bangers', cursive; font-size: 2rem; color: var(--brass-light); background: var(--blood-red); padding: 8px 12px; border-right: 3px groove var(--brass); text-shadow: 2px 2px 0 #000; display: flex; align-items: center; }
+  .bcon { padding: 12px 14px; flex: 1; }
+  .bt { font-family: var(--fh); font-size: var(--bt-size); color: var(--brass); text-shadow: var(--st-shadow); margin: 0 0 6px; letter-spacing: var(--st-track); font-weight: normal; line-height: 1.1; }
+  .bx { font-family: var(--fb); font-size: var(--body-size); color: var(--body-color); line-height: var(--lh); margin: 0; font-weight: var(--body-weight); }
+  .bx em { color: var(--lime); font-style: normal; font-weight: bold; }
+  .fine { font-family: var(--fl); font-size: var(--fine-size); color: var(--lime); text-align: center; margin-top: 14px; }
+
+  /* ----- per-option tokens ----- */
+  .ph-cur {
+    --fh: 'Bangers', cursive; --fb: 'Comic Sans MS', 'Chalkboard SE', cursive; --fl: 'Special Elite', monospace; --fn: var(--fb);
+    --logo-size: 1.5rem; --tag-size: 0.8rem; --nav-size: 0.75rem; --nav-gap: 5px; --mq-size: 1.2rem;
+    --join-pad: 30px; --lab-size: 1.5rem; --lab-pad: 30px; --lab-track: 3px;
+    --st-size: 1.2rem; --st-track: 0; --st-shadow: none; --bt-size: 1.5rem;
+    --body-size: 0.8rem; --body-color: #aaa; --lh: 1.4; --body-weight: normal; --fine-size: 0.65rem;
+    --knk-size: 60px; --knk-op: 0.6; --knk-z: 2;
+  }
+  .ph-a {
+    --fh: 'Bangers', cursive; --fb: 'Comic Sans MS', 'Chalkboard SE', cursive; --fl: 'Special Elite', monospace; --fn: var(--fb);
+    --logo-size: 1.9rem; --tag-size: 0.9rem; --nav-size: 0.9rem; --nav-gap: 6px; --mq-size: 1.2rem;
+    --join-pad: 22px 14px 16px; --lab-size: 1.3rem; --lab-pad: 14px; --lab-track: 2px;
+    --st-size: 1.35rem; --st-track: 0.5px; --st-shadow: 2px 2px 0 #000; --bt-size: 1.5rem;
+    --body-size: 0.95rem; --body-color: #e2e2e2; --lh: 1.55; --body-weight: normal; --fine-size: 0.8rem;
+    --knk-size: 40px; --knk-op: 0.22; --knk-z: 0;
+  }
+  .ph-b {
+    --fh: 'Bangers', cursive; --fb: 'Comic Neue', 'Comic Sans MS', cursive; --fl: 'Special Elite', monospace; --fn: var(--fb);
+    --logo-size: 1.9rem; --tag-size: 0.9rem; --nav-size: 0.95rem; --nav-gap: 6px; --mq-size: 1.2rem;
+    --join-pad: 22px 14px 16px; --lab-size: 1.3rem; --lab-pad: 14px; --lab-track: 2px;
+    --st-size: 1.4rem; --st-track: 1px; --st-shadow: 2px 2px 0 #000; --bt-size: 1.5rem;
+    --body-size: 1rem; --body-color: #ececec; --lh: 1.5; --body-weight: 700; --fine-size: 0.8rem;
+    --knk-size: 40px; --knk-op: 0.22; --knk-z: 0;
+  }
+  .ph-c {
+    --fh: 'Luckiest Guy', 'Bangers', cursive; --fb: 'Patrick Hand', 'Comic Sans MS', cursive; --fl: 'Special Elite', monospace; --fn: var(--fb);
+    --logo-size: 1.9rem; --tag-size: 0.95rem; --nav-size: 1.1rem; --nav-gap: 6px; --mq-size: 1.2rem;
+    --join-pad: 22px 14px 16px; --lab-size: 1.15rem; --lab-pad: 14px; --lab-track: 1px;
+    --st-size: 1.25rem; --st-track: 0.5px; --st-shadow: 2px 2px 0 #000; --bt-size: 1.3rem;
+    --body-size: 1.15rem; --body-color: #ececec; --lh: 1.45; --body-weight: normal; --fine-size: 0.85rem;
+    --knk-size: 40px; --knk-op: 0.22; --knk-z: 0;
+  }
+  .ph-d {
+    --fh: 'Anton', 'Impact', sans-serif; --fb: 'Nunito', 'Trebuchet MS', sans-serif; --fl: 'Courier Prime', 'Courier New', monospace; --fn: var(--fb);
+    --logo-size: 1.9rem; --tag-size: 0.9rem; --nav-size: 0.9rem; --nav-gap: 6px; --mq-size: 1.2rem;
+    --join-pad: 22px 14px 16px; --lab-size: 1.1rem; --lab-pad: 14px; --lab-track: 3px;
+    --st-size: 1.15rem; --st-track: 1.5px; --st-shadow: none; --bt-size: 1.25rem;
+    --body-size: 1rem; --body-color: #e6e6e6; --lh: 1.55; --body-weight: 400; --fine-size: 0.85rem;
+    --knk-size: 40px; --knk-op: 0.22; --knk-z: 0;
+  }
+  .ph-d .nv a { font-weight: 800; }
+  .ph-d .st, .ph-d .bt, .ph-d .join-lab { text-transform: uppercase; }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">bkg.club · mobile readability · for approval</div>
+  <h1>Four ways to make BKG readable on a phone without losing the MySpace</h1>
+  <p class="lede">Every frame below is a real 375px phone width rendering of the site header, nav, and the INITIATION section, plus one bylaw as a body-copy sample. Swipe or scroll the row sideways to compare. The brass, the blood red, the marquee, the knuckles and the "ur" spelling stay in all of them.</p>
+
+  <section>
+    <h2>What is actually breaking on phones today</h2>
+    <div class="findings">
+      <div class="finding"><b>Nav links go black-on-black</b><p>The header fades from brass to pure black. On a phone the twelve links wrap into three rows below the logo, and the bottom rows land on the black part. The text is black, 12px, and underlined.</p></div>
+      <div class="finding"><b>Body copy is 12.8px light grey Comic Sans</b><p>Step descriptions, the members note and the bylaws are set at 0.8rem in #aaa. Comic Sans is also not installed on Android, so Android members get whatever the browser substitutes.</p></div>
+      <div class="finding"><b>Floating knuckles sit on top of the text</b><p>Eight 60px emoji are pinned above the page at 60% opacity. On a wide screen they live in the margins. On a phone there are no margins, so they drift over paragraphs.</p></div>
+      <div class="finding"><b>The INITIATION ribbon is wider than the box</b><p>It is set to never wrap with 3px letter-spacing and 30px side padding, so on narrow phones it overhangs the double border. The section's own 30px padding leaves about 290px for text.</p></div>
+    </div>
+  </section>
+
+  <nav class="strip" aria-label="Jump to option">
+    <a href="#opt-cur"><span class="k">0</span>Current</a>
+    <a href="#opt-a"><span class="k">A</span>Same fonts, fixed</a>
+    <a href="#opt-b"><span class="k">B</span>Comic Neue</a>
+    <a href="#opt-c"><span class="k">C</span>Notebook doodle</a>
+    <a href="#opt-d"><span class="k">D</span>Rounded &amp; readable</a>
+  </nav>
+
+  <div class="rail" id="rail"></div>
+
+  <section>
+    <h2>What changes, element by element</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Element</th><th>Current</th><th>A · Same fonts, fixed</th><th>B · Comic Neue</th><th>C · Notebook doodle</th><th>D · Rounded &amp; readable</th></tr></thead>
+        <tbody>
+          <tr><td>Nav links</td><td class="cur">Comic Sans 12px, black, underlined, inline in the brass header, "|" separators</td><td>Comic Sans 14.4px bold, gold chips on a black bar under the header</td><td>Comic Neue 15.2px bold, same chip bar</td><td>Patrick Hand 17.6px, same chip bar</td><td>Nunito 14.4px extra-bold, same chip bar</td></tr>
+          <tr><td>Logo "BKG.club"</td><td class="cur">Bangers 24px on phones</td><td>Bangers 30px</td><td>Bangers 30px</td><td>Bangers 30px</td><td>Bangers 30px</td></tr>
+          <tr><td>Tagline sticker</td><td class="cur">Special Elite 12.8px</td><td>Special Elite 14.4px</td><td>Special Elite 14.4px</td><td>Special Elite 15.2px</td><td>Courier Prime 14.4px</td></tr>
+          <tr><td>INITIATION ribbon</td><td class="cur">Bangers 24px, nowrap, 30px side pad, overhangs</td><td>Bangers 21px, 14px pad, fits</td><td>Bangers 21px, fits</td><td>Luckiest Guy 18px, fits</td><td>Anton 18px, fits</td></tr>
+          <tr><td>Step / bylaw titles</td><td class="cur">Bangers 19px, no shadow</td><td>Bangers 22px, black drop shadow</td><td>Bangers 22px, +1px tracking, shadow</td><td>Luckiest Guy 20px, shadow</td><td>Anton 18px, +1.5px tracking, caps</td></tr>
+          <tr><td>Step body / bylaw text</td><td class="cur">Comic Sans 12.8px, #aaa, line 1.4</td><td>Comic Sans 15.2px, #e2e2e2, line 1.55</td><td>Comic Neue Bold 16px, #ececec, line 1.5</td><td>Patrick Hand 18.4px, #ececec, line 1.45</td><td>Nunito 16px, #e6e6e6, line 1.55</td></tr>
+          <tr><td>Section padding on phone</td><td class="cur">30px + 5px double border</td><td>14px sides</td><td>14px sides</td><td>14px sides</td><td>14px sides</td></tr>
+          <tr><td>Floating knuckles</td><td class="cur">60px, 60% opacity, above the text</td><td>40px, 22%, behind the text</td><td>same as A</td><td>same as A</td><td>same as A</td></tr>
+          <tr><td>Android / iPhone fonts</td><td class="cur">Comic Sans missing on Android; iOS shows Chalkboard SE</td><td>Same gap as today</td><td>Comic Neue loads everywhere (Google Fonts)</td><td>Patrick Hand loads everywhere</td><td>Nunito loads everywhere</td></tr>
+          <tr><td>Extra font downloads</td><td class="cur">Bangers, Special Elite</td><td>none</td><td>+ Comic Neue (2 weights)</td><td>+ Patrick Hand, Luckiest Guy</td><td>+ Nunito, Courier Prime, Anton</td></tr>
+          <tr><td>Vibe drift from today</td><td class="cur">—</td><td>none</td><td>barely, Comic Neue is Comic Sans with the wobble sanded off</td><td>a bit, reads as a doodled notebook</td><td>most, but still brass-on-black and loud</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>How to approve</h2>
+    <div class="approve">
+      <p>Reply with a letter. Mixing is fine, for example "B fonts with D's nav bar", since the nav bar, the knuckle fix, the ribbon fix and the padding are the same across A through D and can ship with any font choice.</p>
+      <ol>
+        <li><b>A</b> is the no-argument option: nothing new to load, every fix is size, colour and layout.</li>
+        <li><b>B</b> is the recommendation if you want the Comic Sans look to survive on Android.</li>
+        <li><b>C</b> is the most "handwritten", so it needs the biggest size to stay readable.</li>
+        <li><b>D</b> is the most legible and the furthest from the current look.</li>
+      </ol>
+    </div>
+  </section>
+</div>
+
+<template id="frame">
+  <div class="opt">
+    <div class="opt-head"><span class="k"></span><b></b><span class="verdict"></span></div>
+    <div class="ph">
+      <div class="scr">
+        <div class="knk">🤜</div><div class="knk">🤛</div><div class="knk">🤜</div><div class="knk">🤛</div>
+        <div class="content">
+          <header class="hd">
+            <div class="logo"><span>BKG</span>.club</div>
+            <div class="tag">Get ur brass on the air!! ✨</div>
+            <nav class="nv">
+              <a href="#" onclick="return false">HOME</a><span class="sep">|</span>
+              <a href="#" onclick="return false">BYLAWS</a><span class="sep">|</span>
+              <a href="#" onclick="return false" class="active">JOIN</a><span class="sep">|</span>
+              <a href="#" onclick="return false">ROSTER</a><span class="sep">|</span>
+              <a href="#" onclick="return false">MAP</a><span class="sep">|</span>
+              <a href="#" onclick="return false">NEARBY</a><span class="sep">|</span>
+              <a href="#" onclick="return false">DOWNLINE</a><span class="sep">|</span>
+              <a href="#" onclick="return false">RECRUIT</a><span class="sep">|</span>
+              <a href="#" onclick="return false">CLUBS</a><span class="sep">|</span>
+              <a href="#" onclick="return false">SAFETY</a><span class="sep">|</span>
+              <a href="#" onclick="return false">OUTBREAK</a><span class="sep">|</span>
+              <a href="#" onclick="return false">DISCORD</a>
+            </nav>
+          </header>
+          <div class="mq"><div class="mq-t">★彡 WELCOME TO THE BRASS KNUCKLE GANG!!! 彡★ 2 METER CW OR BUST!!! ★彡 POUNDIN' BRASS SINCE 2025 彡★ QRL? QRL? QRL? 彡★</div></div>
+          <div class="main">
+            <section class="join">
+              <div class="join-lab">🤜 INITIATION 🤛</div>
+              <div class="steps">
+                <div class="step"><div class="num"><span>1</span></div><h3 class="st">MAKE THE CONTACT</h3><p class="sd">Complete a 2-meter CW contact (QSO) with an existing BKG member!! Watch 4 us on POTA and SOTA activations near u!! 🏔️</p></div>
+                <div class="step"><div class="num"><span>2</span></div><h3 class="st">SUBMIT UR INFO</h3><p class="sd">After the contact, provide the UTC time, date, and band (2m CW) 2 the member u worked!! 📝</p></div>
+                <div class="step"><div class="num"><span>3</span></div><h3 class="st">GET UR NUMBER</h3><p class="sd">Receive ur official BKG membership number and join the ranks of the BRASS POUNDERS!! 🤜📡</p></div>
+              </div>
+              <div class="note">🚨 <strong>MEMBERS:</strong> B4 submitting a recruit, <strong>verify the new member would like 2 join BKG!!</strong> Gang membership is 100% voluntary!! 🚨</div>
+            </section>
+            <div class="bylaw">
+              <div class="bnum">II</div>
+              <div class="bcon"><h3 class="bt">ALWAYS SEND A PROPER ROGER</h3><p class="bx">Members must make a thoughtful effort 2 send at least one <em>"proper Roger"</em> per contact (QSO). Failure 2 do so may result in <em>EXCOMMUNICATION</em>!! 📻</p></div>
+            </div>
+            <div class="fine">🤜 Worked a new op on 2m CW? Sponsor 'em into the gang!! 🤜</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-notes"></div>
+  </div>
+</template>
+
+<script>
+  var OPTIONS = [
+    { id: 'cur', k: '0', name: 'Current site', cls: 'ph-cur', verdict: ['bad', 'as shipped'],
+      notes: 'What members see today at 375px. On a Mac or Windows phone emulator this shows real Comic Sans; on Android it shows the browser fallback, exactly like the live site.' },
+    { id: 'a', k: 'A', name: 'Same fonts, fixed', cls: 'ph-a navbar', verdict: ['good', 'no new fonts'],
+      notes: ['Nav moves to its own black bar with gold chip links, 14px, room to tap.', 'Body copy 12.8px → 15.2px and #aaa → near-white.', 'Knuckles shrink and drop behind the text on phones.', 'INITIATION ribbon fits; section padding 30px → 14px.'] },
+    { id: 'b', k: 'B', name: 'Comic Neue', cls: 'ph-b navbar', verdict: ['good', 'recommended'],
+      notes: ['Everything in A, plus Comic Sans → Comic Neue Bold (Google Fonts), which keeps the goofy letterforms but with even strokes and real bold.', 'Loads the same on Android, iPhone and desktop.', 'Bangers headings get 1px of tracking so the condensed letters stop touching.'] },
+    { id: 'c', k: 'C', name: 'Notebook doodle', cls: 'ph-c navbar', verdict: ['good', 'most handwritten'],
+      notes: ['Body → Patrick Hand at 18px, a marker-pen face that stays open at size.', 'Headings → Luckiest Guy, wider and rounder than Bangers so titles read at a glance.', 'Reads like a doodled binder cover, still 100% not a corporate site.'] },
+    { id: 'd', k: 'D', name: 'Rounded & readable', cls: 'ph-d navbar', verdict: ['good', 'most legible'],
+      notes: ['Body → Nunito 16px, a rounded sans that keeps the friendly feel without the wobble.', 'Section headings → Anton (already used on the Safety page), all caps.', 'Typewriter bits → Courier Prime, a heavier and cleaner typewriter than Special Elite.', 'Bangers stays for the logo, marquee and step numbers so it still says BKG.'] }
+  ];
+  var rail = document.getElementById('rail');
+  var tpl = document.getElementById('frame');
+  OPTIONS.forEach(function (o) {
+    var f = tpl.content.cloneNode(true);
+    var root = f.querySelector('.opt');
+    root.id = 'opt-' + o.id;
+    f.querySelector('.opt-head .k').textContent = o.k;
+    f.querySelector('.opt-head b').textContent = o.name;
+    var v = f.querySelector('.verdict'); v.classList.add(o.verdict[0]); v.textContent = o.verdict[1];
+    f.querySelector('.ph').className = 'ph ' + o.cls;
+    var n = f.querySelector('.opt-notes');
+    if (typeof o.notes === 'string') { n.textContent = o.notes; }
+    else { var ul = document.createElement('ul'); o.notes.forEach(function (t) { var li = document.createElement('li'); li.textContent = t; ul.appendChild(li); }); n.appendChild(ul); }
+    rail.appendChild(f);
+  });
+  document.querySelectorAll('.strip a').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var t = document.querySelector(a.getAttribute('href'));
+      if (!t) return; e.preventDefault();
+      t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    });
+  });
+</script>
+</body>
+</html>
